@@ -1,5 +1,5 @@
 # Microsolvt
-This project is a mini C++ solver of harmonic equation on some "regular" domain.
+This project is a mini C++ solver of Poisson equation on some "regular" domain.
 
 ## Dependency
 Our project will depend on two third-party libraries:
