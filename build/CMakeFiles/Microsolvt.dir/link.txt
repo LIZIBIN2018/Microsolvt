@@ -1,0 +1,1 @@
+/usr/bin/c++     CMakeFiles/Microsolvt.dir/main.cpp.o  -o Microsolvt  -ljsoncpp 
