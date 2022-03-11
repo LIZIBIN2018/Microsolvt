@@ -1,3 +1,0 @@
-/home/phantom/coding/parallel201/Microsolvt/build/CMakeFiles/rebuild_cache.dir
-/home/phantom/coding/parallel201/Microsolvt/build/CMakeFiles/edit_cache.dir
-/home/phantom/coding/parallel201/Microsolvt/build/CMakeFiles/Microsolvt.dir
