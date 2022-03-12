@@ -1,6 +1,6 @@
 {
-    "grid_h": 0.1,
-    "circ_c": "0.5,0.5",
+    "grid_h": 0.05,
+    "circ_c": [0.5,0.5],
     "circ_r": 0.3,
     "bdry_type": "Dirichlet",
     "bdry_val": "???"
