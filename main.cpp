@@ -25,12 +25,12 @@ void testfun() // TODELETE
 int main()
 {
     testfun();
-    
+
     // 文件内容全部读取到root变量中
     Json::Value root;
     if(!read_json("input.json", root)) 
         return 1;
-
+    
     // 生成网格
     Grid grid(root); 
 

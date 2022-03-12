@@ -117,7 +117,7 @@ void Grid::generate_bit_graph(int flag)/*default flag = 0*/
     {
         for(int j=0;j<grid_size;++j)
         {
-            GridNodeType temp = at(i,j).type;
+            GridNodeType temp = at(j,i).type;
             f<<(temp==GridNodeType::boundary)<<' ';
         }
         f <<'\n';
