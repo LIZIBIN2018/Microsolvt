@@ -1,7 +1,7 @@
 {
-    "grid_h": 0.025,
+    "grid_h": 0.05,
     "circ_c": [0.5,0.5],
     "circ_r": 0.35,
-    "bdry_type": "Dirichlet",
-    "bdry_val": "???"
+    "bdry_type": "Dirichlet",  
+    "bdry_val": 0
 }

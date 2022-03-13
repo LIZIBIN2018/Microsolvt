@@ -1,6 +1,7 @@
 #pragma once
 #include <iostream>
 #include <utility>
+#include <functional>
 #include <jsoncpp/json/json.h>
 #include "Array2D.h"
 
@@ -16,8 +17,9 @@ enum class GridNodeType
 enum class GridBdryType
 {
     Dirichlet,
+    DirichletNeumann,
+    NeumannDirichlet,
     Neumann,
-    Mixed
 };
 
 // 网格节点
@@ -33,6 +35,8 @@ class Grid
     GridBdryType              bdryType;      
     double                    grid_length;    
     unsigned                  grid_size;
+    int                       grid_node_num;
+
     bool                      circ_exist = true;      // 默认有圆
     double                    circ_radius;
     std::pair<double, double> circ_center;
@@ -57,9 +61,17 @@ public:  //主要函数
     // 初始化：进行内外点标记，以及尽量直接在边界点写入已知的数值。
     void grid_initialization();
 
+    // 求解
+    void grid_solve(std::function<double(double,double)>f,
+                    std::function<double(double,double)>df_dx,
+                    std::function<double(double,double)>df_dy);
+    
+    // 输出
+    void grid_output();
 public: // 辅助函数
     void safe_delete(); 
-
+    GridNode *next_node(int &x, int &y); //寻找指定位置的下一个有效节点
+    GridNode *next_node(int &idx);
 public:
     // TODELETE debug tools 
     void show()
