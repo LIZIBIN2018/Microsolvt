@@ -59,7 +59,6 @@ public:  //主要函数
 
 public: // 辅助函数
     void safe_delete(); 
-    void generate_bit_graph(int flag = 0);
 
 public:
     // TODELETE debug tools 
@@ -70,4 +69,6 @@ public:
         std::cout<< "circ_radius = " << circ_radius << '\n';
         //std::cout<< "circ_center = " << grid_length << '\n';
     }
+    void generate_bit_graph(int flag = 0);
+
 };

@@ -58,10 +58,10 @@ void Grid::grid_initialization()  //TOCHECK
 
     // 设置圆的内部和边界 //TODO 
     //考虑从圆的底部开始中心开花，循环到顶部，只算圆的范围多一圈，节省计算量
-    int circ_bottom   = ceil ((circ_center.second - circ_radius) / grid_length);
-    int circ_top      = floor((circ_center.second + circ_radius) / grid_length) + 1;
+    int circ_bottom   = floor ((circ_center.second - circ_radius) / grid_length) ;
+    int circ_top      = ceil((circ_center.second + circ_radius) / grid_length);
     int circ_center_x = floor(circ_center.first / grid_length);
-    for(int y = circ_bottom; y<circ_top; y++)
+    for(int y = circ_bottom ; y <= circ_top; y++)
     {
         int x = 0;
         bool this_row_not_finished = true;
@@ -69,33 +69,27 @@ void Grid::grid_initialization()  //TOCHECK
         {
             // left point on grid  (circ_center_x - x,y)
             // right point on grid (circ_center_x + x,y)
-            double r_left = std::sqrt(
-                std::pow( (circ_center_x - x)*grid_length - circ_center.first , 2) 
-              + std::pow( y*grid_length                   - circ_center.second, 2));
+           
             double r_right = std::sqrt(
                 std::pow( (circ_center_x + x)*grid_length - circ_center.first , 2) 
               + std::pow( y*grid_length                   - circ_center.second, 2));
-            if(r_left < circ_radius)
-            {
-                at(circ_center_x - x,y).type = GridNodeType::exterier;
-            }
-            else if(r_left < circ_radius + grid_length)
-            {
-                at(circ_center_x - x,y).type = GridNodeType::boundary;
-            }
+           
             if(r_right < circ_radius)
             {
                 at(circ_center_x + x,y).type = GridNodeType::exterier;
+                at(circ_center_x - x,y).type = GridNodeType::exterier;
             }
             else if(r_right < circ_radius + grid_length)
             {
                 at(circ_center_x + x,y).type = GridNodeType::boundary;
-                this_row_not_finished = false;
+                at(circ_center_x - x,y).type = GridNodeType::boundary;
             }
+            else
+                this_row_not_finished = false;
             ++x;
         }
     }
-    generate_bit_graph();
+    generate_bit_graph(); // TODELETE
 }
 
 Grid::~Grid() 
@@ -113,13 +107,13 @@ void Grid::generate_bit_graph(int flag)/*default flag = 0*/
 {
     std::ofstream f("bitgraph.ppm");
     f << "P3\n"<< grid_size<<' '<<grid_size<<"\n255\n";
-    for(int i=0;i<grid_size;++i)
+    for(int i = grid_size - 1;i>= 0;--i)
     {
         for(int j=0;j<grid_size;++j)
         {
             GridNodeType temp = at(j,i).type;
-            f<<(temp==GridNodeType::boundary)<<' ';
+            f<<(temp==GridNodeType::boundary)+0*(temp == GridNodeType::exterier)<<' ';
         }
-        f <<'\n';
+        f << std::endl;
     }  
 }
