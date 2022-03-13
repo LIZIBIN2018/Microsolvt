@@ -70,16 +70,16 @@ void Grid::grid_initialization()  //TOCHECK
             // left point on grid  (circ_center_x - x,y)
             // right point on grid (circ_center_x + x,y)
            
-            double r_right = std::sqrt(
+            double r_current = std::sqrt(
                 std::pow( (circ_center_x + x)*grid_length - circ_center.first , 2) 
               + std::pow( y*grid_length                   - circ_center.second, 2));
            
-            if(r_right < circ_radius)
+            if(r_current < circ_radius)
             {
                 at(circ_center_x + x,y).type = GridNodeType::exterier;
                 at(circ_center_x - x,y).type = GridNodeType::exterier;
             }
-            else if(r_right < circ_radius + grid_length)
+            else if(r_current < circ_radius + grid_length)
             {
                 at(circ_center_x + x,y).type = GridNodeType::boundary;
                 at(circ_center_x - x,y).type = GridNodeType::boundary;
