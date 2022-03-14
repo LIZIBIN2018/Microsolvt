@@ -29,7 +29,15 @@ int main()
     Grid grid(root); 
 
     // 求解线性方程组,把结果直接写在网格里 TODO（在把网格上的未知数向量化时，我们按字典序排列）
-    int fun_idx = root["bdry_val"].asInt();
+    int fun_idx;
+    try{ 
+        fun_idx = root["bdry_val"].asInt();
+        if(fun_idx < 0 || fun_idx >= 3)
+            throw 1;
+    }
+    catch(...){
+        std::cerr << "Invalid parameter bdry_val." << std::endl;
+    }
     grid.grid_solve(testfuns[fun_idx],
                     d_testfuns[fun_idx][0],
                     d_testfuns[fun_idx][1]);

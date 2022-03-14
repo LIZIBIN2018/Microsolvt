@@ -8,30 +8,61 @@ Grid::Grid(const Json::Value &root)
 : grid_node_arr_ptr(nullptr)
 {
     // 计算网格的大小，步长
-    grid_length = root["grid_h"].asDouble();
-    grid_size   = floor(1.0 / grid_length) + 1;
-    grid_length = 1.0 / (grid_size-1); //重新计算，保证等分
-    grid_node_num = grid_size * grid_size;
+    try{
+        grid_length = root["grid_h"].asDouble();
+        if(grid_length <= 0)
+            throw 1;
+        grid_size   = floor(1.0 / grid_length) + 1;
+        grid_length = 1.0 / (grid_size-1); //重新计算，保证等分
+        grid_node_num = grid_size * grid_size;
+    }
+    catch(...){
+        std::cerr << "Invalid parameter grid_h." << std::endl;
+        exit(1);
+    }
 
     // 读取圆属性
-    circ_radius = root["circ_r"].asDouble();
-    circ_center = std::move(
-        std::pair<double, double>{
-            root["circ_c"][0].asDouble(),
-            root["circ_c"][1].asDouble() });
-
-    // 是否符合要求？（圆至少包含了四个网格点？区域是否连通？）(是不是有圆, 不包含四点我们就认为没有)
-    if(! is_regular())  return;
+    if(root["circ_r"].isNull() && root["circ_c"].isNull()){
+        circ_center = std::make_pair(0.0, 0.0);
+        circ_radius = 0.0;
+    }
+    else{
+        try{
+            circ_radius = root["circ_r"].asDouble();
+            if(circ_radius < 0)
+                throw 1;
+            circ_center = std::move(
+                std::pair<double, double>{
+                    root["circ_c"][0].asDouble(),
+                    root["circ_c"][1].asDouble() });
+        }
+        catch(...){
+            std::cerr << "Invalid parameter circ_r or circ_c." << std::endl;
+            exit(1);
+        }
+        
+        // 是否符合要求？（去掉圆后至少包含了四个网格点？区域是否连通？）
+        if(! is_regular())  return;
+    }
 
     // 设置网格的边界条件
-    if(root["bdry_type"].asString() == std::string("Dirichlet"))
-        this->bdryType = GridBdryType::Dirichlet;
-    else if(root["bdry_type"].asString() == std::string("Neumann"))
-        this->bdryType = GridBdryType::Neumann;
-    else if(root["bdry_type"].asString() == std::string("DirichletNeumann"))
-        this->bdryType = GridBdryType::DirichletNeumann;
-    else
-        this->bdryType = GridBdryType::NeumannDirichlet;
+    try{
+        auto bdry_type_str = root["bdry_type"].asString();
+        if(bdry_type_str == std::string("Dirichlet"))
+            this->bdryType = GridBdryType::Dirichlet;
+        else if(bdry_type_str == std::string("Neumann"))
+            this->bdryType = GridBdryType::Neumann;
+        else if(bdry_type_str == std::string("DirichletNeumann"))
+            this->bdryType = GridBdryType::DirichletNeumann;
+        else if(bdry_type_str == std::string("NeumannDirichlet"))
+            this->bdryType = GridBdryType::NeumannDirichlet;
+        else
+            throw 1;
+    }
+    catch(...){
+        std::cerr << "Invalid parameter bdry_type." << std::endl;
+        exit(1);
+    }
     
     // 生成网格
     grid_node_arr_ptr = new Array2D<GridNode>(grid_size,grid_size);
