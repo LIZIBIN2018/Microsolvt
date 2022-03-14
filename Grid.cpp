@@ -4,6 +4,16 @@
 #include <fstream>
 #include <eigen3/Eigen/Dense>
 
+float distance(float x1, float x2, float y1, float y2){
+    x1 -= x2;
+    y1 -= y2;
+    return std::sqrt(x1 * x1 + y1 * y1);
+}
+
+int clamp(int i, int min, int max){
+    return std::max(std::min(i, max), min);
+}
+
 Grid::Grid(const Json::Value &root)
 : grid_node_arr_ptr(nullptr)
 {
@@ -41,8 +51,21 @@ Grid::Grid(const Json::Value &root)
             exit(1);
         }
         
-        // 是否符合要求？（去掉圆后至少包含了四个网格点？区域是否连通？）
-        if(! is_regular())  return;
+        // 区域是否连通？
+        int nearest_x = clamp((int)std::roundf(circ_center.first / grid_length), 0, grid_size - 1),
+            nearest_y = clamp((int)std::roundf(circ_center.second / grid_length), 0, grid_size - 1);
+        if(((distance(circ_center.first, circ_center.second, 0,               nearest_y      ) <= circ_radius) +
+            (distance(circ_center.first, circ_center.second, grid_length - 1, nearest_y      ) <= circ_radius) +
+            (distance(circ_center.first, circ_center.second, nearest_x,       0              ) <= circ_radius) +
+            (distance(circ_center.first, circ_center.second, nearest_x,       grid_length - 1) <= circ_radius) -
+            (distance(circ_center.first, circ_center.second, 0,               0              ) <= circ_radius) -
+            (distance(circ_center.first, circ_center.second, grid_length - 1, 0              ) <= circ_radius) -
+            (distance(circ_center.first, circ_center.second, 0,               grid_length - 1) <= circ_radius) -
+            (distance(circ_center.first, circ_center.second, grid_length - 1, grid_length - 1) <= circ_radius)) >= 2)
+        {
+            std::cerr << "Domain not connected." << std::endl;
+            exit(1);
+        }
     }
 
     // 设置网格的边界条件
@@ -69,15 +92,11 @@ Grid::Grid(const Json::Value &root)
 
     // 网格初始化：类型设置网格点的类型，根据网格边界条件在边界点上赋初始值。 
     grid_initialization(); //移交工作
-}
 
-
-
-bool Grid::is_regular()
-{
-    // TODO 
-    // 我们只考虑圆是子集的情形，不是子集就exit
-    return true;
+    if(grid_node_num < 4){
+        std::cerr << "Point Number no more than 4." << std::endl;
+        exit(1);
+    }
 }
 
 void Grid::grid_initialization()  //TOCHECK
