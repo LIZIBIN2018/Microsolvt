@@ -8,9 +8,10 @@
 // 用于指示点在内部或者外部或者是在边界上
 enum class GridNodeType
 {
-    exterier,
     interior,
-    boundary
+    exterier,
+    squareBoundary,
+    circleBoundary
 };
 
 // 用于指示网格的边界条件类型
@@ -34,6 +35,7 @@ class Grid
     Array2D<GridNode>        *grid_node_arr_ptr;      // 2D grid
     GridBdryType              bdryType;      
     double                    grid_length;    
+    double                    inv_grid_length;
     unsigned                  grid_size;
     int                       grid_node_num;
 
@@ -64,7 +66,8 @@ public:  //主要函数
     // 求解
     void grid_solve(std::function<double(double,double)>f,
                     std::function<double(double,double)>df_dx,
-                    std::function<double(double,double)>df_dy);
+                    std::function<double(double,double)>df_dy,
+                    std::function<double(double,double)>neg_laplacian_f);
     
     // 输出
     void grid_output();
