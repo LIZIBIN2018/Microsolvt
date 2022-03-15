@@ -115,7 +115,7 @@ void Grid::grid_initialization(){
         max_x = clamp((int)std::ceil((circ_center.first + circ_radius)  * inv_grid_length), 0, grid_size - 1),
         min_y = clamp((int)((circ_center.second - circ_radius)          * inv_grid_length), 0, grid_size - 1),
         max_y = clamp((int)std::ceil((circ_center.second + circ_radius) * inv_grid_length), 0, grid_size - 1);
-    std::cout << min_x << ' ' << min_y << ',' << max_x << ' ' << max_y << std::endl;
+    // std::cout << min_x << ' ' << min_y << ',' << max_x << ' ' << max_y << std::endl;
     for (size_t i = min_x; i <= max_x; i++){
         for (size_t j = min_y; j <= max_y; j++){
             if(distance(i * grid_length, j * grid_length,
@@ -207,13 +207,14 @@ void Grid::generate_bit_graph(int flag)/*default flag = 0*/
         }
         f << std::endl;
     } 
-    std::cout<< grid_node_num << std::endl; 
+    // std::cout<< grid_node_num << std::endl; 
 }
 
 
 void Grid::grid_solve(std::function<double(double,double)>f,
                       std::function<double(double,double)>df_dx,
-                      std::function<double(double,double)>df_dy)
+                      std::function<double(double,double)>df_dy,
+                      std::function<double(double,double)>neg_laplacian_f)
 {
     // 创建矩阵，求解Ax = b
     Eigen::MatrixXd A;
@@ -224,23 +225,169 @@ void Grid::grid_solve(std::function<double(double,double)>f,
     x.resize(grid_node_num, 1);
     b = x; // lazy boy.....
 
-    // 从grid中写入矩阵 TODO
+    // 从grid中写入矩阵
+    Array2D<int> matrix_idx(grid_node_num, grid_node_num);
+    for (size_t j = 0, node_idx = 0; j < grid_size; j++)
+    {
+        for (size_t i = 0; i < grid_size; i++)
+        {
+            matrix_idx.at(i, j) = at(i, j).type != GridNodeType::exterier ? node_idx++ : -1;
+        }
+    }
+    double invsqr_h = inv_grid_length * inv_grid_length;
+    for (size_t j = 0; j < grid_size; j++)
+    {
+        for (size_t i = 0; i < grid_size; i++)
+        {
+            int idx = matrix_idx.at(i, j);
+            if(at(i, j).type == GridNodeType::interior){
+                A(idx, idx) = 4 * invsqr_h;
+                A(idx, matrix_idx.at(i - 1, j)) = -invsqr_h;
+                A(idx, matrix_idx.at(i + 1, j)) = -invsqr_h;
+                A(idx, matrix_idx.at(i, j - 1)) = -invsqr_h;
+                A(idx, matrix_idx.at(i, j + 1)) = -invsqr_h;
+                b(idx) = neg_laplacian_f(i * grid_length, j * grid_length);
+            }
+            else if(at(i, j).type == GridNodeType::squareBoundary){
+                if(((int)bdryType & 1) == 1) // Neumann
+                {
+                    if(j == 0){
+                        if(j + 1 >= grid_size || matrix_idx.at(i, j + 1) == -1){
+                            std::cerr << "Invalid mesh." << std::endl;
+                            exit(1);
+                        }
+                        A(idx, idx) = -inv_grid_length;
+                        A(idx, matrix_idx.at(i, j + 1)) = inv_grid_length;
+                        b(idx) = df_dy(i * grid_length, j * grid_length) + f(i * grid_length, j * grid_length) * grid_length * 0.5f;
+                    }
+                    else if(j == grid_size - 1){
+                        if(j - 1 < 0 || matrix_idx.at(i, j - 1) == -1){
+                            std::cerr << "Invalid mesh." << std::endl;
+                            exit(1);
+                        }
+                        A(idx, idx) = -inv_grid_length;
+                        A(idx, matrix_idx.at(i, j - 1)) = inv_grid_length;
+                        b(idx) = -df_dy(i * grid_length, j * grid_length) + f(i * grid_length, j * grid_length) * grid_length * 0.5f;
+                    }
+                    else if(i == 0){
+                        if(i + 1 >= grid_size || matrix_idx.at(i + 1, j) == -1){
+                            std::cerr << "Invalid mesh." << std::endl;
+                            exit(1);
+                        }
+                        A(idx, idx) = -inv_grid_length;
+                        A(idx, matrix_idx.at(i + 1, j)) = inv_grid_length;
+                        b(idx) = df_dx(i * grid_length, j * grid_length) + f(i * grid_length, j * grid_length) * grid_length * 0.5f;
+                    }
+                    else{
+                        if(i - 1 < 0 || matrix_idx.at(i - 1, j) == -1){
+                            std::cerr << "Invalid mesh." << std::endl;
+                            exit(1);
+                        }
+                        A(idx, idx) = -inv_grid_length;
+                        A(idx, matrix_idx.at(i - 1, j)) = inv_grid_length;
+                        b(idx) = -df_dx(i * grid_length, j * grid_length) + f(i * grid_length, j * grid_length) * grid_length * 0.5f;
+                    }
+                }
+                else // Dirichlet
+                {
+                    A(idx, idx) = 1;
+                    b(idx) = f(i * grid_length, j * grid_length);
+                }
+            }
+            else if(at(i, j).type == GridNodeType::circleBoundary){
+                if(((int)bdryType & 2) == 2) // Neumann
+                {
+                    double distance_to_center = distance(i * grid_length, j * grid_length, circ_center.first, circ_center.second);
+                    double normalX = (i * grid_length - circ_center.first) / distance_to_center,
+                            normalY = (j * grid_length - circ_center.second) / distance_to_center;
+                    
+                    if(normalY >= 0){
+                        if(j + 1 >= grid_size || matrix_idx.at(i, j + 1) == -1){
+                            std::cerr << "Invalid mesh." << std::endl;
+                            exit(1);
+                        }
+                        A(idx, idx) = -inv_grid_length * normalY;
+                        A(idx, matrix_idx.at(i, j + 1)) = inv_grid_length * normalY;
+                        b(idx) += (df_dy(i * grid_length, j * grid_length) + f(i * grid_length, j * grid_length) * grid_length * 0.5f) * normalY;
+                    }
+                    else{
+                        if(j - 1 < 0 || matrix_idx.at(i, j - 1) == -1){
+                            std::cerr << "Invalid mesh." << std::endl;
+                            exit(1);
+                        }
+                        A(idx, idx) = inv_grid_length * normalY;
+                        A(idx, matrix_idx.at(i, j - 1)) = -inv_grid_length * normalY;
+                        b(idx) += (df_dy(i * grid_length, j * grid_length) - f(i * grid_length, j * grid_length) * grid_length * 0.5f) * normalY;
+                    }
+
+                    if(normalX >= 0){
+                        if(i + 1 >= grid_size || matrix_idx.at(i + 1, j) == -1){
+                            std::cerr << "Invalid mesh." << std::endl;
+                            exit(1);
+                        }
+                        A(idx, idx) = -inv_grid_length * normalX;
+                        A(idx, matrix_idx.at(i + 1, j)) = inv_grid_length * normalX;
+                        b(idx) += (df_dx(i * grid_length, j * grid_length) + f(i * grid_length, j * grid_length) * grid_length * 0.5f) * normalX;
+                    }
+                    else{
+                        if(i - 1 < 0 || matrix_idx.at(i - 1, j) == -1){
+                            std::cerr << "Invalid mesh." << std::endl;
+                            exit(1);
+                        }
+                        A(idx, idx) = inv_grid_length * normalX;
+                        A(idx, matrix_idx.at(i - 1, j)) = -inv_grid_length * normalX;
+                        b(idx) += (df_dx(i * grid_length, j * grid_length) - f(i * grid_length, j * grid_length) * grid_length * 0.5f) * normalX;
+                    }
+                }
+                else // Dirichlet
+                {
+                    A(idx, idx) = 1;
+                    b(idx) = f(i * grid_length, j * grid_length);
+                }
+            }
+        }
+    }
 
     // 求解 TODO
+    x = A.lu().solve(b);
 
     // 从矩阵写入grid
-    int       place        = 0; // stand for the current node of the grid with disk
+    /*int       place        = 0; // stand for the current node of the grid with disk
     GridNode *current_node = &at(0,0);
     for(int j = 0; j<grid_node_num; j++)
     {
         current_node->val = x(j);
         current_node = next_node(place);
+    }*/
+    for (size_t j = 0, node_idx = 0; j < grid_size; j++)
+    {
+        for (size_t i = 0; i < grid_size; i++)
+        {
+            if(matrix_idx.at(i, j) != -1){
+                at(i, j).val = x(matrix_idx.at(i, j));
+            }
+        }
     }
 }
 
 void Grid::grid_output()
 {
-    std::fstream f("grid_val_output.txt"); //TODO
+    std::ofstream f("grid_val_output.txt");
+    for (size_t j = 0, node_idx = 0; j < grid_size; j++)
+    {
+        for (size_t i = 0; i < grid_size; i++)
+        {
+            if(at(i, j).type != GridNodeType::exterier){
+                f << at(i, j).val << ' ';
+            }
+            else{
+                f << "* ";
+            }
+        }
+        f << std::endl;
+    }
+    f.close();
+    std::cout << "Results written to grid_val_output.txt" << std::endl;
 }
 
 GridNode *Grid::next_node(int &x, int &y)

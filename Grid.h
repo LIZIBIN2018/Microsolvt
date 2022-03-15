@@ -66,7 +66,8 @@ public:  //主要函数
     // 求解
     void grid_solve(std::function<double(double,double)>f,
                     std::function<double(double,double)>df_dx,
-                    std::function<double(double,double)>df_dy);
+                    std::function<double(double,double)>df_dy,
+                    std::function<double(double,double)>neg_laplacian_f);
     
     // 输出
     void grid_output();
