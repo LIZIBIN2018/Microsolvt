@@ -87,5 +87,5 @@ void generate_test_fun(std::function<double(double,double)> testfuns[3],
     
     d_testfuns[2][0] = [](double x, double y){return  cos(x) * cos(y);};
     d_testfuns[2][1] = [](double x, double y){return -sin(x) * sin(y);};
-    d_testfuns[2][1] = [](double x, double y){return  2 * sin(x) * cos(y);};
+    d_testfuns[2][2] = [](double x, double y){return  2 * sin(x) * cos(y);};
 }

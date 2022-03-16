@@ -9,7 +9,7 @@
 enum class GridNodeType
 {
     interior,
-    exterier,
+    exterior,
     squareBoundary,
     circleBoundary
 };
@@ -18,8 +18,8 @@ enum class GridNodeType
 enum class GridBdryType
 {
     Dirichlet,
-    DirichletNeumann,
-    NeumannDirichlet,
+    DirichletNeumann, // Dirichlet on square border, Neumann on circle border
+    NeumannDirichlet, // Neumann on square border, Dirichlet on circle border
     Neumann,
 };
 
