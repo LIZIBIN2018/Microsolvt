@@ -377,6 +377,7 @@ void Grid::grid_solve(std::function<double(double,double)>f,
 void Grid::grid_output(std::string path)
 {
     std::ofstream f(path);
+    f.precision(17);
     for (size_t j = 0, node_idx = 0; j < grid_size; j++)
     {
         for (size_t i = 0; i < grid_size; i++)
