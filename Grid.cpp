@@ -87,14 +87,14 @@ Grid::Grid(const Json::Value &root)
     if(circ_exist){
         int nearest_x = clamp((int)std::roundf(circ_center.first* inv_grid_length), 0, grid_size - 1),
             nearest_y = clamp((int)std::roundf(circ_center.second* inv_grid_length), 0, grid_size - 1);
-        if(((at(0,               nearest_y      ).type == GridNodeType::exterier) +
-            (at(grid_length - 1, nearest_y      ).type == GridNodeType::exterier) +
-            (at(nearest_x,       0              ).type == GridNodeType::exterier) +
-            (at(nearest_x,       grid_length - 1).type == GridNodeType::exterier) -
-            (at(0,               0              ).type == GridNodeType::exterier) -
-            (at(grid_length - 1, 0              ).type == GridNodeType::exterier) -
-            (at(0,               grid_length - 1).type == GridNodeType::exterier) -
-            (at(grid_length - 1, grid_length - 1).type == GridNodeType::exterier)) >= 2)
+        if(((at(0,               nearest_y      ).type == GridNodeType::exterior) +
+            (at(grid_length - 1, nearest_y      ).type == GridNodeType::exterior) +
+            (at(nearest_x,       0              ).type == GridNodeType::exterior) +
+            (at(nearest_x,       grid_length - 1).type == GridNodeType::exterior) -
+            (at(0,               0              ).type == GridNodeType::exterior) -
+            (at(grid_length - 1, 0              ).type == GridNodeType::exterior) -
+            (at(0,               grid_length - 1).type == GridNodeType::exterior) -
+            (at(grid_length - 1, grid_length - 1).type == GridNodeType::exterior)) >= 2)
         {
             std::cerr << "Domain not connected." << std::endl;
             exit(1);
@@ -111,25 +111,27 @@ void Grid::grid_initialization(){
         at(0,i).type           = GridNodeType::squareBoundary;
         at(grid_size-1,i).type = GridNodeType::squareBoundary;
     }
-    int min_x = clamp((int)((circ_center.first - circ_radius)           * inv_grid_length), 0, grid_size - 1),
-        max_x = clamp((int)std::ceil((circ_center.first + circ_radius)  * inv_grid_length), 0, grid_size - 1),
-        min_y = clamp((int)((circ_center.second - circ_radius)          * inv_grid_length), 0, grid_size - 1),
-        max_y = clamp((int)std::ceil((circ_center.second + circ_radius) * inv_grid_length), 0, grid_size - 1);
-    // std::cout << min_x << ' ' << min_y << ',' << max_x << ' ' << max_y << std::endl;
-    for (size_t i = min_x; i <= max_x; i++){
-        for (size_t j = min_y; j <= max_y; j++){
-            if(distance(i * grid_length, j * grid_length,
-                        circ_center.first, circ_center.second) <= circ_radius){
-                at(i, j).type = GridNodeType::exterier;
-                if(i != 0 && at(i - 1, j).type != GridNodeType::exterier)
-                    at(i - 1, j).type = GridNodeType::circleBoundary;
-                if(j != 0 && at(i, j - 1).type != GridNodeType::exterier)
-                    at(i, j - 1).type = GridNodeType::circleBoundary;
-                if(i != grid_size - 1 && at(i + 1, j).type != GridNodeType::exterier)
-                    at(i + 1, j).type = GridNodeType::circleBoundary;
-                if(j != grid_size - 1 && at(i, j + 1).type != GridNodeType::exterier)
-                    at(i, j + 1).type = GridNodeType::circleBoundary;
-                --grid_node_num;
+    if(circ_exist){
+        int min_x = clamp((int)((circ_center.first - circ_radius)           * inv_grid_length), 0, grid_size - 1),
+            max_x = clamp((int)std::ceil((circ_center.first + circ_radius)  * inv_grid_length), 0, grid_size - 1),
+            min_y = clamp((int)((circ_center.second - circ_radius)          * inv_grid_length), 0, grid_size - 1),
+            max_y = clamp((int)std::ceil((circ_center.second + circ_radius) * inv_grid_length), 0, grid_size - 1);
+        // std::cout << min_x << ' ' << min_y << ',' << max_x << ' ' << max_y << std::endl;
+        for (size_t i = min_x; i <= max_x; i++){
+            for (size_t j = min_y; j <= max_y; j++){
+                if(distance(i * grid_length, j * grid_length,
+                            circ_center.first, circ_center.second) <= circ_radius){
+                    at(i, j).type = GridNodeType::exterior;
+                    if(i != 0 && at(i - 1, j).type != GridNodeType::exterior)
+                        at(i - 1, j).type = GridNodeType::circleBoundary;
+                    if(j != 0 && at(i, j - 1).type != GridNodeType::exterior)
+                        at(i, j - 1).type = GridNodeType::circleBoundary;
+                    if(i != grid_size - 1 && at(i + 1, j).type != GridNodeType::exterior)
+                        at(i + 1, j).type = GridNodeType::circleBoundary;
+                    if(j != grid_size - 1 && at(i, j + 1).type != GridNodeType::exterior)
+                        at(i, j + 1).type = GridNodeType::circleBoundary;
+                    --grid_node_num;
+                }
             }
         }
     }
@@ -226,12 +228,12 @@ void Grid::grid_solve(std::function<double(double,double)>f,
     b = x; // lazy boy.....
 
     // 从grid中写入矩阵
-    Array2D<int> matrix_idx(grid_node_num, grid_node_num);
+    Array2D<int> matrix_idx(grid_size, grid_size);
     for (size_t j = 0, node_idx = 0; j < grid_size; j++)
     {
         for (size_t i = 0; i < grid_size; i++)
         {
-            matrix_idx.at(i, j) = at(i, j).type != GridNodeType::exterier ? node_idx++ : -1;
+            matrix_idx.at(i, j) = at(i, j).type != GridNodeType::exterior ? node_idx++ : -1;
         }
     }
     double invsqr_h = inv_grid_length * inv_grid_length;
@@ -249,8 +251,9 @@ void Grid::grid_solve(std::function<double(double,double)>f,
                 b(idx) = neg_laplacian_f(i * grid_length, j * grid_length);
             }
             else if(at(i, j).type == GridNodeType::squareBoundary){
-                if(((int)bdryType & 1) == 1) // Neumann
+                if(((int)bdryType & 2) == 2) // Neumann
                 {
+                    b(idx) = f(i * grid_length, j * grid_length) * grid_length * 0.5f;
                     if(j == 0){
                         if(j + 1 >= grid_size || matrix_idx.at(i, j + 1) == -1){
                             std::cerr << "Invalid mesh." << std::endl;
@@ -258,7 +261,7 @@ void Grid::grid_solve(std::function<double(double,double)>f,
                         }
                         A(idx, idx) = -inv_grid_length;
                         A(idx, matrix_idx.at(i, j + 1)) = inv_grid_length;
-                        b(idx) = df_dy(i * grid_length, j * grid_length) + f(i * grid_length, j * grid_length) * grid_length * 0.5f;
+                        b(idx) += df_dy(i * grid_length, j * grid_length);
                     }
                     else if(j == grid_size - 1){
                         if(j - 1 < 0 || matrix_idx.at(i, j - 1) == -1){
@@ -267,7 +270,7 @@ void Grid::grid_solve(std::function<double(double,double)>f,
                         }
                         A(idx, idx) = -inv_grid_length;
                         A(idx, matrix_idx.at(i, j - 1)) = inv_grid_length;
-                        b(idx) = -df_dy(i * grid_length, j * grid_length) + f(i * grid_length, j * grid_length) * grid_length * 0.5f;
+                        b(idx) += -df_dy(i * grid_length, j * grid_length);
                     }
                     else if(i == 0){
                         if(i + 1 >= grid_size || matrix_idx.at(i + 1, j) == -1){
@@ -276,7 +279,7 @@ void Grid::grid_solve(std::function<double(double,double)>f,
                         }
                         A(idx, idx) = -inv_grid_length;
                         A(idx, matrix_idx.at(i + 1, j)) = inv_grid_length;
-                        b(idx) = df_dx(i * grid_length, j * grid_length) + f(i * grid_length, j * grid_length) * grid_length * 0.5f;
+                        b(idx) += df_dx(i * grid_length, j * grid_length);
                     }
                     else{
                         if(i - 1 < 0 || matrix_idx.at(i - 1, j) == -1){
@@ -285,7 +288,7 @@ void Grid::grid_solve(std::function<double(double,double)>f,
                         }
                         A(idx, idx) = -inv_grid_length;
                         A(idx, matrix_idx.at(i - 1, j)) = inv_grid_length;
-                        b(idx) = -df_dx(i * grid_length, j * grid_length) + f(i * grid_length, j * grid_length) * grid_length * 0.5f;
+                        b(idx) += -df_dx(i * grid_length, j * grid_length);
                     }
                 }
                 else // Dirichlet
@@ -295,12 +298,13 @@ void Grid::grid_solve(std::function<double(double,double)>f,
                 }
             }
             else if(at(i, j).type == GridNodeType::circleBoundary){
-                if(((int)bdryType & 2) == 2) // Neumann
+                if(((int)bdryType & 1) == 1) // Neumann
                 {
                     double distance_to_center = distance(i * grid_length, j * grid_length, circ_center.first, circ_center.second);
                     double normalX = (i * grid_length - circ_center.first) / distance_to_center,
                             normalY = (j * grid_length - circ_center.second) / distance_to_center;
-                    
+                    b(idx) = f(i * grid_length, j * grid_length) * grid_length * 0.5f;
+
                     if(normalY >= 0){
                         if(j + 1 >= grid_size || matrix_idx.at(i, j + 1) == -1){
                             std::cerr << "Invalid mesh." << std::endl;
@@ -308,7 +312,7 @@ void Grid::grid_solve(std::function<double(double,double)>f,
                         }
                         A(idx, idx) = -inv_grid_length * normalY;
                         A(idx, matrix_idx.at(i, j + 1)) = inv_grid_length * normalY;
-                        b(idx) += (df_dy(i * grid_length, j * grid_length) + f(i * grid_length, j * grid_length) * grid_length * 0.5f) * normalY;
+                        b(idx) += df_dy(i * grid_length, j * grid_length) * normalY;
                     }
                     else{
                         if(j - 1 < 0 || matrix_idx.at(i, j - 1) == -1){
@@ -317,7 +321,7 @@ void Grid::grid_solve(std::function<double(double,double)>f,
                         }
                         A(idx, idx) = inv_grid_length * normalY;
                         A(idx, matrix_idx.at(i, j - 1)) = -inv_grid_length * normalY;
-                        b(idx) += (df_dy(i * grid_length, j * grid_length) - f(i * grid_length, j * grid_length) * grid_length * 0.5f) * normalY;
+                        b(idx) += df_dy(i * grid_length, j * grid_length) * normalY;
                     }
 
                     if(normalX >= 0){
@@ -325,18 +329,18 @@ void Grid::grid_solve(std::function<double(double,double)>f,
                             std::cerr << "Invalid mesh." << std::endl;
                             exit(1);
                         }
-                        A(idx, idx) = -inv_grid_length * normalX;
+                        A(idx, idx) += -inv_grid_length * normalX;
                         A(idx, matrix_idx.at(i + 1, j)) = inv_grid_length * normalX;
-                        b(idx) += (df_dx(i * grid_length, j * grid_length) + f(i * grid_length, j * grid_length) * grid_length * 0.5f) * normalX;
+                        b(idx) += df_dx(i * grid_length, j * grid_length) * normalX;
                     }
                     else{
                         if(i - 1 < 0 || matrix_idx.at(i - 1, j) == -1){
                             std::cerr << "Invalid mesh." << std::endl;
                             exit(1);
                         }
-                        A(idx, idx) = inv_grid_length * normalX;
+                        A(idx, idx) += inv_grid_length * normalX;
                         A(idx, matrix_idx.at(i - 1, j)) = -inv_grid_length * normalX;
-                        b(idx) += (df_dx(i * grid_length, j * grid_length) - f(i * grid_length, j * grid_length) * grid_length * 0.5f) * normalX;
+                        b(idx) += df_dx(i * grid_length, j * grid_length) * normalX;
                     }
                 }
                 else // Dirichlet
@@ -370,14 +374,15 @@ void Grid::grid_solve(std::function<double(double,double)>f,
     }
 }
 
-void Grid::grid_output()
+void Grid::grid_output(std::string path)
 {
-    std::ofstream f("grid_val_output.txt");
+    std::ofstream f(path);
+    f.precision(17);
     for (size_t j = 0, node_idx = 0; j < grid_size; j++)
     {
         for (size_t i = 0; i < grid_size; i++)
         {
-            if(at(i, j).type != GridNodeType::exterier){
+            if(at(i, j).type != GridNodeType::exterior){
                 f << at(i, j).val << ' ';
             }
             else{
@@ -387,7 +392,7 @@ void Grid::grid_output()
         f << std::endl;
     }
     f.close();
-    std::cout << "Results written to grid_val_output.txt" << std::endl;
+    std::cout << "Job completes with results written to " << path << std::endl;
 }
 
 GridNode *Grid::next_node(int &x, int &y)
@@ -401,7 +406,7 @@ GridNode *Grid::next_node(int &x, int &y)
         y = ((x==0) + y) % grid_size;
         if(y == 0)
             return rst;
-        if(at(x,y).type != GridNodeType::exterier)
+        if(at(x,y).type != GridNodeType::exterior)
             rst = &at(x,y);
     }
     return rst;

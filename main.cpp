@@ -31,20 +31,29 @@ int main()
     // 求解线性方程组,把结果直接写在网格里（在把网格上的未知数向量化时，我们按字典序排列）
     int fun_idx;
     try{ 
-        fun_idx = root["bdry_val"].asInt();
+        fun_idx = root["func_idx"].asInt();
         if(fun_idx < 0 || fun_idx >= 3)
             throw 1;
     }
     catch(...){
-        std::cerr << "Invalid parameter bdry_val." << std::endl;
+        std::cerr << "Invalid parameter func_idx." << std::endl;
+        exit(1);
     }
     grid.grid_solve(testfuns[fun_idx],
                     d_testfuns[fun_idx][0],
                     d_testfuns[fun_idx][1],
                     d_testfuns[fun_idx][2]);
 
+    std::string output_path;
+    try{
+        output_path = root["output_path"].asString();
+    }catch(...){
+        std::cerr << "Invalid parameter output_path." << std::endl;
+        exit(1);
+    }
+
     // 输出
-    grid.grid_output();
+    grid.grid_output(output_path);
 
     return 0;
 }
@@ -70,22 +79,23 @@ bool read_json(string file, Json::Value &root)
 
 inline double pow2(double d) { return d * d; }
 
+#define PI 3.14159265358979323846
 void generate_test_fun(std::function<double(double,double)> testfuns[3],
                        std::function<double(double,double)> d_testfuns[3][3])
 {
     testfuns[0] = [](double x, double y){return exp(y  + sin(x));};
-    testfuns[1] = [](double x, double y){return exp(y) * cos(x);};
-    testfuns[2] = [](double x, double y){return sin(x) * cos(y) ;};
+    testfuns[1] = [](double x, double y){return pow2(x - 0.5) + pow2(y - 0.5);};
+    testfuns[2] = [](double x, double y){return sin(2 * PI * x) * sin(2 * PI * y);};
 
-    d_testfuns[0][0] = [](double x, double y){return  exp(y  + sin(x))*cos(x);};
-    d_testfuns[0][1] = [](double x, double y){return  exp(y  + sin(x));};
-    d_testfuns[0][2] = [](double x, double y){return  exp(y  + sin(x)) * (sin(x) - pow2(cos(x)) - 1);};
+    d_testfuns[0][0] = [](double x, double y){return exp(y  + sin(x)) * cos(x);};
+    d_testfuns[0][1] = [](double x, double y){return exp(y  + sin(x));};
+    d_testfuns[0][2] = [](double x, double y){return exp(y  + sin(x)) * (sin(x) - pow2(cos(x)) - 1);};
     
-    d_testfuns[1][0] = [](double x, double y){return -exp(y) * sin(x);};
-    d_testfuns[1][1] = [](double x, double y){return  exp(y) * cos(x);};
-    d_testfuns[1][2] = [](double x, double y){return  0;};
+    d_testfuns[1][0] = [](double x, double y){return 2 * x - 1;};
+    d_testfuns[1][1] = [](double x, double y){return 2 * y - 1;};
+    d_testfuns[1][2] = [](double x, double y){return -4;};
     
-    d_testfuns[2][0] = [](double x, double y){return  cos(x) * cos(y);};
-    d_testfuns[2][1] = [](double x, double y){return -sin(x) * sin(y);};
-    d_testfuns[2][1] = [](double x, double y){return  2 * sin(x) * cos(y);};
+    d_testfuns[2][0] = [](double x, double y){return 2 * PI * cos(2 * PI * x) * sin(2 * PI * y);};
+    d_testfuns[2][1] = [](double x, double y){return 2 * PI * sin(2 * PI * x) * cos(2 * PI * y);};
+    d_testfuns[2][2] = [](double x, double y){return 4 * PI * PI * sin(2 * PI * x) * sin(2 * PI * y);};
 }

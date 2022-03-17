@@ -9,7 +9,7 @@
 enum class GridNodeType
 {
     interior,
-    exterier,
+    exterior,
     squareBoundary,
     circleBoundary
 };
@@ -18,8 +18,8 @@ enum class GridNodeType
 enum class GridBdryType
 {
     Dirichlet,
-    DirichletNeumann,
-    NeumannDirichlet,
+    DirichletNeumann, // Dirichlet on square border, Neumann on circle border
+    NeumannDirichlet, // Neumann on square border, Dirichlet on circle border
     Neumann,
 };
 
@@ -70,7 +70,7 @@ public:  //主要函数
                     std::function<double(double,double)>neg_laplacian_f);
     
     // 输出
-    void grid_output();
+    void grid_output(std::string path);
 public: // 辅助函数
     void safe_delete(); 
     GridNode *next_node(int &x, int &y); //寻找指定位置的下一个有效节点
