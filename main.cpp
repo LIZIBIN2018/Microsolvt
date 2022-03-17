@@ -31,20 +31,29 @@ int main()
     // 求解线性方程组,把结果直接写在网格里（在把网格上的未知数向量化时，我们按字典序排列）
     int fun_idx;
     try{ 
-        fun_idx = root["bdry_val"].asInt();
+        fun_idx = root["func_idx"].asInt();
         if(fun_idx < 0 || fun_idx >= 3)
             throw 1;
     }
     catch(...){
-        std::cerr << "Invalid parameter bdry_val." << std::endl;
+        std::cerr << "Invalid parameter func_idx." << std::endl;
+        exit(1);
     }
     grid.grid_solve(testfuns[fun_idx],
                     d_testfuns[fun_idx][0],
                     d_testfuns[fun_idx][1],
                     d_testfuns[fun_idx][2]);
 
+    std::string output_path;
+    try{
+        output_path = root["output_path"].asString();
+    }catch(...){
+        std::cerr << "Invalid parameter output_path." << std::endl;
+        exit(1);
+    }
+
     // 输出
-    grid.grid_output();
+    grid.grid_output(output_path);
 
     return 0;
 }

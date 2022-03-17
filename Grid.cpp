@@ -111,25 +111,27 @@ void Grid::grid_initialization(){
         at(0,i).type           = GridNodeType::squareBoundary;
         at(grid_size-1,i).type = GridNodeType::squareBoundary;
     }
-    int min_x = clamp((int)((circ_center.first - circ_radius)           * inv_grid_length), 0, grid_size - 1),
-        max_x = clamp((int)std::ceil((circ_center.first + circ_radius)  * inv_grid_length), 0, grid_size - 1),
-        min_y = clamp((int)((circ_center.second - circ_radius)          * inv_grid_length), 0, grid_size - 1),
-        max_y = clamp((int)std::ceil((circ_center.second + circ_radius) * inv_grid_length), 0, grid_size - 1);
-    // std::cout << min_x << ' ' << min_y << ',' << max_x << ' ' << max_y << std::endl;
-    for (size_t i = min_x; i <= max_x; i++){
-        for (size_t j = min_y; j <= max_y; j++){
-            if(distance(i * grid_length, j * grid_length,
-                        circ_center.first, circ_center.second) <= circ_radius){
-                at(i, j).type = GridNodeType::exterior;
-                if(i != 0 && at(i - 1, j).type != GridNodeType::exterior)
-                    at(i - 1, j).type = GridNodeType::circleBoundary;
-                if(j != 0 && at(i, j - 1).type != GridNodeType::exterior)
-                    at(i, j - 1).type = GridNodeType::circleBoundary;
-                if(i != grid_size - 1 && at(i + 1, j).type != GridNodeType::exterior)
-                    at(i + 1, j).type = GridNodeType::circleBoundary;
-                if(j != grid_size - 1 && at(i, j + 1).type != GridNodeType::exterior)
-                    at(i, j + 1).type = GridNodeType::circleBoundary;
-                --grid_node_num;
+    if(circ_exist){
+        int min_x = clamp((int)((circ_center.first - circ_radius)           * inv_grid_length), 0, grid_size - 1),
+            max_x = clamp((int)std::ceil((circ_center.first + circ_radius)  * inv_grid_length), 0, grid_size - 1),
+            min_y = clamp((int)((circ_center.second - circ_radius)          * inv_grid_length), 0, grid_size - 1),
+            max_y = clamp((int)std::ceil((circ_center.second + circ_radius) * inv_grid_length), 0, grid_size - 1);
+        // std::cout << min_x << ' ' << min_y << ',' << max_x << ' ' << max_y << std::endl;
+        for (size_t i = min_x; i <= max_x; i++){
+            for (size_t j = min_y; j <= max_y; j++){
+                if(distance(i * grid_length, j * grid_length,
+                            circ_center.first, circ_center.second) <= circ_radius){
+                    at(i, j).type = GridNodeType::exterior;
+                    if(i != 0 && at(i - 1, j).type != GridNodeType::exterior)
+                        at(i - 1, j).type = GridNodeType::circleBoundary;
+                    if(j != 0 && at(i, j - 1).type != GridNodeType::exterior)
+                        at(i, j - 1).type = GridNodeType::circleBoundary;
+                    if(i != grid_size - 1 && at(i + 1, j).type != GridNodeType::exterior)
+                        at(i + 1, j).type = GridNodeType::circleBoundary;
+                    if(j != grid_size - 1 && at(i, j + 1).type != GridNodeType::exterior)
+                        at(i, j + 1).type = GridNodeType::circleBoundary;
+                    --grid_node_num;
+                }
             }
         }
     }
@@ -372,9 +374,9 @@ void Grid::grid_solve(std::function<double(double,double)>f,
     }
 }
 
-void Grid::grid_output()
+void Grid::grid_output(std::string path)
 {
-    std::ofstream f("grid_val_output.txt");
+    std::ofstream f(path);
     for (size_t j = 0, node_idx = 0; j < grid_size; j++)
     {
         for (size_t i = 0; i < grid_size; i++)
@@ -389,7 +391,7 @@ void Grid::grid_output()
         f << std::endl;
     }
     f.close();
-    std::cout << "Results written to grid_val_output.txt" << std::endl;
+    std::cout << "Job completes with results written to " << path << std::endl;
 }
 
 GridNode *Grid::next_node(int &x, int &y)
