@@ -1,0 +1,9 @@
+-nan -nan -nan -nan -nan -nan -nan -nan -nan 
+-nan -nan -nan -nan -nan -nan -nan -nan -nan 
+-nan -nan -nan * * * -nan -nan -nan 
+-nan -nan * * * * * -nan -nan 
+-nan -nan * * * * * -nan -nan 
+-nan -nan * * * * * -nan -nan 
+-nan -nan -nan * * * -nan -nan -nan 
+-nan -nan -nan -nan -nan -nan -nan -nan -nan 
+-nan -nan -nan -nan -inf -2200327748768227.8 -2200327748768231.2 -2200327748768232.2 -2200327748768232 
