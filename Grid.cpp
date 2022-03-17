@@ -228,7 +228,7 @@ void Grid::grid_solve(std::function<double(double,double)>f,
     b = x; // lazy boy.....
 
     // 从grid中写入矩阵
-    Array2D<int> matrix_idx(grid_node_num, grid_node_num);
+    Array2D<int> matrix_idx(grid_size, grid_size);
     for (size_t j = 0, node_idx = 0; j < grid_size; j++)
     {
         for (size_t i = 0; i < grid_size; i++)
