@@ -1,5 +1,5 @@
 {
-    "grid_h": 0.015625,
+    "grid_h": 0.0675,
     "bdry_type": "Neumann",
     "restriction_operator": "injection",
     "interpolation_operator": "linear",
@@ -8,5 +8,5 @@
     "epsilon" : 10e-10,
     "initial_guess": 1,
     "func_idx": 2,
-    "output_path": "result/Func2_HasCircle_Neumann_Grid64.txt"
+    "output_path": "/result"
 }

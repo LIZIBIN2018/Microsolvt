@@ -8,12 +8,28 @@
 #include "Multigrid/Multigrid.h"
 #include <functional>
 
+
+// test tool
+#include <unistd.h>
+
 using namespace std;
 
 
 bool read_json(string file, Json::Value &root);
 void generate_test_fun(std::function<double(double,double)> testfuns[3],
                        std::function<double(double,double)> d_testfuns[3][3]);
+int run_grid();
+int run_multigrid();
+
+int main()
+{
+    std::string grid_flag = "multigrid";
+    if(grid_flag == "multigrid")
+        return run_multigrid();
+    else
+        return run_grid();
+}
+
 
 int run_grid()
 {
@@ -69,21 +85,13 @@ int run_multigrid()
 
     // 文件内容全部读取到root变量中
     Json::Value root;
-    if(!read_json("Multigrid/input.json", root)) 
+    if(!read_json("./Multigrid/input.json", root))   // TODO: 如何实现边界猜测的读取？
         return 1;
     
     // 生成网格
     Multigrid<1> grid(root);  // TODO: 如何摆脱dim的硬编码？
-    return 0;
-}
 
-int main()
-{
-    std::string grid_flag = "multigrid";
-    if(grid_flag == "multigrid")
-        return run_multigrid();
-    else
-        return run_grid();
+    return 0;
 }
 
 bool read_json(string file, Json::Value &root)
