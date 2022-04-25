@@ -5,7 +5,9 @@
 #include <eigen3/Eigen/Dense>
 #include "Grid.h"
 #include "Array2D.h"
+#include "Multigrid/Multigrid.h"
 #include <functional>
+
 using namespace std;
 
 
@@ -13,9 +15,9 @@ bool read_json(string file, Json::Value &root);
 void generate_test_fun(std::function<double(double,double)> testfuns[3],
                        std::function<double(double,double)> d_testfuns[3][3]);
 
-int main()
+int run_grid()
 {
-    // 生成测试函数
+     // 生成测试函数
     std::function<double(double,double)> testfuns[3];
     std::function<double(double,double)> d_testfuns[3][3];
     generate_test_fun(testfuns,d_testfuns);
@@ -56,6 +58,32 @@ int main()
     grid.grid_output(output_path);
 
     return 0;
+}
+
+int run_multigrid()
+{
+     // 生成测试函数
+    std::function<double(double,double)> testfuns[3];
+    std::function<double(double,double)> d_testfuns[3][3];
+    generate_test_fun(testfuns,d_testfuns);
+
+    // 文件内容全部读取到root变量中
+    Json::Value root;
+    if(!read_json("Multigrid/input.json", root)) 
+        return 1;
+    
+    // 生成网格
+    Multigrid<1> grid(root);  // TODO: 如何摆脱dim的硬编码？
+    return 0;
+}
+
+int main()
+{
+    std::string grid_flag = "multigrid";
+    if(grid_flag == "multigrid")
+        return run_multigrid();
+    else
+        return run_grid();
 }
 
 bool read_json(string file, Json::Value &root)
