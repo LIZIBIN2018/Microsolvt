@@ -1,11 +1,12 @@
 {
     "grid_h": 0.015625,
     "bdry_type": "Neumann",
+    "restriction_operator": "injection",
+    "interpolation_operator": "linear",
+    "cycle": "V-cycle",
+    "maximum_iteration": 10,
+    "epsilon" : 10e-10,
+    "initial_guess": 1,
     "func_idx": 2,
-    "output_path": "result/Func2_HasCircle_Neumann_Grid64.txt",
-    "circ_c": [
-        0.5,
-        0.5
-    ],
-    "circ_r": 0.35
+    "output_path": "result/Func2_HasCircle_Neumann_Grid64.txt"
 }
