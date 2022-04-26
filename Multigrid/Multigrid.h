@@ -9,17 +9,7 @@
 #include "TransferOperator.h"
 #include "CycleSolver.h"  // 代表cycle的类型
 
-enum class RstOptType // Restriction Operator
-{
-    injection,
-    fullWeighting
-};
 
-enum class ItpOptType // Interpolation Operator
-{
-    linear,
-    quadratic
-};
 
 template <int dim>
 class Multigrid
@@ -32,12 +22,14 @@ private:
     double               inv_grid_length; // floor(?) = n
     unsigned             grid_size;     // n+1
     int                  grid_node_num;
-    RstOptType           grid_rst_opt_type;
-    ItpOptType           grid_itp_opt_type;
     int                  max_itr_num; // maximum times for iteration
     double               epsilon;  // tolerance
 
+
+public: // solver properties
     CycleSolver<dim>    *grid_solver; 
+    RstOptType           grid_rst_opt_type;
+    ItpOptType           grid_itp_opt_type;
    
 public:
     Multigrid() {}

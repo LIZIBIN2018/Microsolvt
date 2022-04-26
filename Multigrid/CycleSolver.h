@@ -1,6 +1,5 @@
 #pragma once
 #include "TransferOperator.h"
-#include "Multigrid.h"
 #include <functional>
 
 template<int dim>
@@ -15,14 +14,13 @@ public:     //ctor & dtor
     CycleSolver(Multigrid<dim> *grid_ptr_) : grid_ptr(grid_ptr_)
     { 
         if(grid_ptr->grid_rst_opt_type == RstOptType::injection)
-            itp_opt = new InjectionOperator(this);
+            rst_opt = new InjectionOperator<dim>(this);
         else if(grid_ptr->grid_rst_opt_type == RstOptType::fullWeighting)
-            itp_opt = new FullWeightOperator(this);
+            rst_opt = new FullWeightOperator<dim>(this);
         if(grid_ptr->grid_itp_opt_type == ItpOptType::linear)
-            itp_opt = new LinearInterpolationOperator(this);
+            itp_opt = new LinearInterpolationOperator<dim>(this);
         else if(grid_ptr->grid_itp_opt_type == ItpOptType::quadratic)
-            itp_opt = new QuadraticInterpolationOperator(this);
-        
+            itp_opt = new QuadraticInterpolationOperator<dim>(this);
     }
     virtual ~CycleSolver() { grid_ptr = nullptr;}
     virtual void solve(std::function<double(double)>) = 0;
