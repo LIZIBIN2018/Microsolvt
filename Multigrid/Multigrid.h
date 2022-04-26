@@ -53,9 +53,11 @@ public:
     void grid_initialization();
     // TODO这丑陋的写法
     void grid_solve(std::function<double(double)> f); 
-    void grid_solve(std::function<double(double, double)> f,
-                    std::vector<std::function<double(double, double)>> df); // dim = 1, df = {f'}, dim = 2 df ={fx, fy, laplace f}
-
+    void grid_solve(std::function<double(double,double)>f,
+                      std::function<double(double,double)>df_dx,
+                      std::function<double(double,double)>df_dy,
+                      std::function<double(double,double)>neg_laplacian_f);
+                      
     void grid_output(std::string path);
 
 private: //TOOLS
@@ -133,12 +135,14 @@ template <int dim> //
 void Multigrid<dim>::grid_solve(
     std::function<double(double)> f)
 {
-
+    
 }
 
-template <int dim>
-void Multigrid<dim>::grid_solve(std::function<double(double, double)> f,
-                    std::vector<std::function<double(double, double)>> df)
+template<int dim>
+void Multigrid<dim>::grid_solve(std::function<double(double,double)>f,
+                      std::function<double(double,double)>df_dx,
+                      std::function<double(double,double)>df_dy,
+                      std::function<double(double,double)>neg_laplacian_f)
 {
 
 }
