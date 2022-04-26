@@ -85,16 +85,19 @@ int run_grid()
 
 int run_multigrid()
 {
+    // 定义网格维度
     constexpr int dim = 1;
-    // 生成测试函数
 
+    
     // 文件内容全部读取到root变量中
     Json::Value root;
     if(!read_json("./Multigrid/input.json", root))   // TODO: 如何实现边界猜测的读取？
         return 1;
     
-    // 生成网格
+    
+    // 根据json生成网格
     Multigrid<dim> grid(root);  // TODO: 如何摆脱dim的硬编码？
+
 
     // 求解线性方程组,把结果直接写在网格里（在把网格上的未知数向量化时，我们按字典序排列）
     int fun_idx;
@@ -108,14 +111,17 @@ int run_multigrid()
         exit(1);
     }
 
+
+    // 生成函数
     std::function<double(double)> f1;
     std::function<double(double)> df1;
-    std::function<double(double,double)> f2[3];
+    std::function<double(double,double)> f2[3];   // 暂时没用
     std::function<double(double,double)> df2[3][3];
     
-    // TODO dim=2？
-    generate_test_fun_1d(f1,df1);
-    grid.grid_solve(f1,df1);
+
+    // 网格求解
+    generate_test_fun_1d(f1,df1); // TODO dim=2？
+    grid.grid_solve(f1);
 
     std::string output_path;
     try{

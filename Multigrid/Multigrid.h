@@ -76,7 +76,7 @@ Multigrid<dim>::Multigrid(const Json::Value &root)
         inv_grid_length = 1.0 / grid_length;
         grid_size = floor(inv_grid_length) + 1; // n + 1
         grid_length = 1.0 / (grid_size - 1);    // h 重新计算，保证等分
-        grid_node_num = grid_size;
+        grid_node_num = grid_size; //TODO
         if (dim == 2)
             grid_node_num *= grid_size;
     }
@@ -86,7 +86,7 @@ Multigrid<dim>::Multigrid(const Json::Value &root)
         exit(1);
     }
 
-    // 设置网格的边界条件
+    // 设置网格的边界条件 //TODELETE 没必要
     try
     {
         auto bdry_type_str = root["bdry_type"].asString();

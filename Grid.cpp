@@ -103,6 +103,7 @@ Grid::Grid(const Json::Value &root)
 }
 
 void Grid::grid_initialization(){
+    // 边界标记
     grid_node_num = grid_size * grid_size;
     for (size_t i = 0; i < grid_size; i++)
     {
