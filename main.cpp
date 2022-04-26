@@ -18,6 +18,7 @@ using namespace std;
 bool read_json(string file, Json::Value &root);
 void generate_test_fun(std::function<double(double,double)> testfuns[3],
                        std::function<double(double,double)> d_testfuns[3][3]);
+void generate_test_fun_1d(std::function<double(double)> &, std::function<double(double)> &);
 int run_grid();
 int run_multigrid();
 

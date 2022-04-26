@@ -25,19 +25,19 @@ template <int dim>
 class Multigrid
 {
 private:
-    Array2D<GridNode> *grid_node_arr_ptr_2d; // 2D grid
-    Array1D<GridNode> *grid_node_arr_ptr_1d; // 1D grid
-    GridBdryType bdryType;
-    double grid_length;     // h
-    double inv_grid_length; // floor(?) = n
-    unsigned grid_size;     // n+1
-    int grid_node_num;
-    RstOptType grid_rst_opt_type;
-    ItpOptType grid_itp_opt_type;
-    int max_itr_num; // maximum times for iteration
-    double epsilon;  // tolerance
+    Array2D<GridNode>   *grid_node_arr_ptr_2d; // 2D grid
+    Array1D<GridNode>   *grid_node_arr_ptr_1d; // 1D grid
+    GridBdryType         bdryType;
+    double               grid_length;     // h
+    double               inv_grid_length; // floor(?) = n
+    unsigned             grid_size;     // n+1
+    int                  grid_node_num;
+    RstOptType           grid_rst_opt_type;
+    ItpOptType           grid_itp_opt_type;
+    int                  max_itr_num; // maximum times for iteration
+    double               epsilon;  // tolerance
 
-    CycleSolver<dim> *grid_solver;       // how to solve 
+    CycleSolver<dim>    *grid_solver; 
    
 public:
     Multigrid() {}
@@ -45,12 +45,9 @@ public:
     Multigrid(const Multigrid &) = delete;
     ~Multigrid() 
     {
-        delete rst_opt; 
-        rst_opt = nullptr;
-        delete grid_solver; 
-        grid_solver = nullptr;
-        delete InterpolationOperator;
-        InterpolationOperator = nullptr;
+        delete grid_node_arr_ptr_1d;  grid_node_arr_ptr_1d = nullptr;
+        delete grid_node_arr_ptr_2d;  grid_node_arr_ptr_2d = nullptr;
+        delete grid_solver;           grid_solver = nullptr;
     } 
 
     void grid_initialization();
@@ -113,17 +110,26 @@ Multigrid<dim>::Multigrid(const Json::Value &root)
     if (dim == 1)
         grid_node_arr_ptr_1d = new Array1D<GridNode>(grid_size);
 
-    // 网格初始化：类型设置网格点的类型，根据网格边界条件在边界点上赋初始值。
-    grid_initialization(); //移交工作
+    // 设置求解器
+    try
+    {
+        auto cycle_type = root["cycle"].asString();
+        if(cycle_type == "V-cycle")
+            grid_solver = new VCycle<dim>(this);
+        else if(cycle_type == "FullMultigridVCycle")
+            grid_solver = new FullMultigridVCycle<dim>(this);
+        else
+            throw 1;
+    }
+    catch(...)
+    {
+        std::cerr << "Invalid cycle type" << std::endl;
+        exit(1);
+    }
 }
 
-template <int dim>
-void Multigrid<dim>::grid_initialization()
-{
-    
-}
 
-template <int dim>
+template <int dim> //
 void Multigrid<dim>::grid_solve(
     std::function<double(double)> f)
 {
@@ -140,5 +146,5 @@ void Multigrid<dim>::grid_solve(std::function<double(double, double)> f,
 template <int dim>
 void Multigrid<dim>::grid_output(std::string path)
 {
-
+    //TODO
 }

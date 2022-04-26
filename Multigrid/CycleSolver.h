@@ -1,39 +1,45 @@
 #pragma once
-
+#include "TransferOperator.h"
 
 template<int dim>
 class Multigrid;
 
+
+
 template<int dim>
 class CycleSolver
 {
-public:
-    CycleSolver()
-    {
-        
-    }
-private:
-    RestrictionOperator *rst_opt;   // restriction
-    InterpolationOperator *itp_opt; // interpolation
-protected: 
-    Multigrid<dim> grid_ptr;
-    void solve() = 0;
+public:     //ctor & dtor
+    CycleSolver(Multigrid<dim> *grid_ptr_) : grid_ptr(grid_ptr_){ }
+    virtual ~CycleSolver() { grid_ptr = nullptr;}
+private:    // data
+    RestrictionOperator<dim> *rst_opt;   // restriction
+    InterpolationOperator<dim> *itp_opt; // interpolation
+protected:  // methods
+    Multigrid<dim> *grid_ptr;
+    virtual void solve() = 0;
 };
 
+
+
 template<int dim>
-class VCycle : public CycleSolver
+class VCycle : public CycleSolver<dim>
 {
 public:
+    VCycle(Multigrid<dim> *grid_ptr_): CycleSolver<dim>(grid_ptr_) { }
     void solve() override
     {
 
     }
 };
 
+
+
 template<int dim>
-class FullMultigridCycle : public CycleSolver
+class FullMultigridVCycle : public CycleSolver<dim>
 {
 public:
+    FullMultigridVCycle(Multigrid<dim> *grid_ptr_): CycleSolver<dim>(grid_ptr_) { }
     void solve() override
     {
 
