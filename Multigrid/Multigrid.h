@@ -137,7 +137,7 @@ template <int dim> //
 void Multigrid<dim>::grid_solve(
     std::function<double(double)> f)
 {
-    
+    grid_solver->solve(f);
 }
 
 template<int dim>
@@ -146,7 +146,7 @@ void Multigrid<dim>::grid_solve(std::function<double(double,double)>f,
                       std::function<double(double,double)>df_dy,
                       std::function<double(double,double)>neg_laplacian_f)
 {
-
+    grid_solver->solve(f,df_dx,df_dy,neg_laplacian_f);
 }
 
 template <int dim>

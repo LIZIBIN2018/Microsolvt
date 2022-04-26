@@ -1,6 +1,6 @@
 #pragma once
 #include "TransferOperator.h"
-
+#include <functional>
 template<int dim>
 class Multigrid;
 
@@ -17,7 +17,11 @@ private:    // data
     InterpolationOperator<dim> *itp_opt; // interpolation
 protected:  // methods
     Multigrid<dim> *grid_ptr;
-    virtual void solve() = 0;
+    virtual void solve(std::function<double(double)>) = 0;
+    virtual void solve(std::function<double(double,double)>,
+                       std::function<double(double,double)>,
+                       std::function<double(double,double)>,
+                       std::function<double(double,double)>) = 0;
 };
 
 
@@ -27,10 +31,18 @@ class VCycle : public CycleSolver<dim>
 {
 public:
     VCycle(Multigrid<dim> *grid_ptr_): CycleSolver<dim>(grid_ptr_) { }
-    void solve() override
+    virtual void solve(std::function<double(double)>) override
     {
 
     }
+    virtual void solve(std::function<double(double,double)>,
+                       std::function<double(double,double)>,
+                       std::function<double(double,double)>,
+                       std::function<double(double,double)>) override
+    {
+
+    }
+};
 };
 
 
@@ -40,7 +52,14 @@ class FullMultigridVCycle : public CycleSolver<dim>
 {
 public:
     FullMultigridVCycle(Multigrid<dim> *grid_ptr_): CycleSolver<dim>(grid_ptr_) { }
-    void solve() override
+    virtual void solve(std::function<double(double)>) override
+    {
+
+    }
+    virtual void solve(std::function<double(double,double)>,
+                       std::function<double(double,double)>,
+                       std::function<double(double,double)>,
+                       std::function<double(double,double)>) override
     {
 
     }
