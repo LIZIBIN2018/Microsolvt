@@ -25,8 +25,8 @@ template <int dim>
 class Multigrid
 {
 private:
-    Array2D<GridNode>   *grid_node_arr_ptr_2d; // 2D grid
-    Array1D<GridNode>   *grid_node_arr_ptr_1d; // 1D grid
+    Array2D<GridNode>   *grid_node_arr_ptr_2d = nullptr; // 2D grid
+    Array1D<GridNode>   *grid_node_arr_ptr_1d = nullptr; // 1D grid
     GridBdryType         bdryType;
     double               grid_length;     // h
     double               inv_grid_length; // floor(?) = n
@@ -113,6 +113,32 @@ Multigrid<dim>::Multigrid(const Json::Value &root)
         grid_node_arr_ptr_2d = new Array2D<GridNode>(grid_size, grid_size);
     if (dim == 1)
         grid_node_arr_ptr_1d = new Array1D<GridNode>(grid_size);
+
+
+    // 设置Transfer算子类型(必须在设置求解器之前)
+    try
+    {
+        auto rstOptStr = root["restriction_operator"]  .asString();
+        auto itpOptStr = root["interpolation_operator"].asString();
+        if(rstOptStr == "injection")
+            grid_rst_opt_type = RstOptType::injection;
+        else if(rstOptStr == "fullWeighting")
+            grid_rst_opt_type = RstOptType::fullWeighting;
+        else 
+            throw 1;
+        if(itpOptStr == "linear")
+            grid_rst_opt_type = RstOptType::injection;
+        else if(itpOptStr == "quadratic")
+            grid_rst_opt_type = RstOptType::fullWeighting;
+        else 
+            throw 1;
+        
+    }
+    catch(...)
+    {
+        std::cerr << "Invalid transfer opetator" << '\n';
+    }
+    
 
     // 设置求解器
     try
