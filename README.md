@@ -6,25 +6,22 @@ Our project will depend on two third-party libraries:
 1. jsoncpp
 2. eigen
 
-## What we need to do
-1. Define a json file to specify the input.
-2. Define the grid about the domain.
-3. Find out the linear equations about the discrete grid of the domain.
-4. Solve the linear equations and store the solution.
-5. Transform the solution to a proper format.
 
-## Some details about our workflow
+## The code framework
+1. Most important class is **Multigrid<int>**, which contains two special tool members and **CycleSolver<int>**;
+2. **CycleSolver<int>** is used to indicate the type of cycle, and solve the linear system.\
+   **CycleSolver<int>** contains two special tool member **InterpolationOperator<int>** and **RestrictionOperator**, to indicate which type of interpolation and restriction.
+  
+## The pipeline
+1. Generate the grid according to the json file.\
+    1.1 Initialize the grid properties.\
+    1.2 Generate the tools objects.
+2. Solve the grid.\
+    2.1 Call the solve function of the grid. (feed f)\
+    2.2 Write the result into the grid.
+3. Output the result.          
+4. Post processing.
 
-### json file
-1. Specify the step length of grid, the center and radius of circular disk, the boundary condition type and the boundary value in `.json` file as the following properties:
-`grid_h`,`circ_c`,`circ_r`,`bdry_type`.`bdry_val`.
-2. Maybe we can generate the json file by another program.....
-
-### Grid
-1. If we need a **adaptive grid**, maybe we need not predefine the step length....
-
-### Linear equations
-nothing
-
-### Output format
-**To be determined**
+## The workflow
+1. Build the framwork of multigrid, transfer the main part of work to the solver.
+2. Implement
