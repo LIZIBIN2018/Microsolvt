@@ -21,6 +21,9 @@ void generate_test_fun(std::function<double(double,double)> testfuns[3],
 int run_grid();
 int run_multigrid();
 
+
+
+
 int main()
 {
     std::string grid_flag = "multigrid";
@@ -29,6 +32,10 @@ int main()
     else
         return run_grid();
 }
+
+
+
+
 
 
 int run_grid()
@@ -78,10 +85,8 @@ int run_grid()
 
 int run_multigrid()
 {
-     // 生成测试函数
-    std::function<double(double,double)> testfuns[3];
-    std::function<double(double,double)> d_testfuns[3][3];
-    generate_test_fun(testfuns,d_testfuns);
+    constexpr int dim = 1;
+    // 生成测试函数
 
     // 文件内容全部读取到root变量中
     Json::Value root;
@@ -89,7 +94,39 @@ int run_multigrid()
         return 1;
     
     // 生成网格
-    Multigrid<1> grid(root);  // TODO: 如何摆脱dim的硬编码？
+    Multigrid<dim> grid(root);  // TODO: 如何摆脱dim的硬编码？
+
+    // 求解线性方程组,把结果直接写在网格里（在把网格上的未知数向量化时，我们按字典序排列）
+    int fun_idx;
+    try{ 
+        fun_idx = root["func_idx"].asInt();
+        if(fun_idx < 0 || fun_idx >= 3)
+            throw 1;
+    }
+    catch(...){
+        std::cerr << "Invalid parameter func_idx." << std::endl;
+        exit(1);
+    }
+
+    std::function<double(double)> f1;
+    std::function<double(double)> df1;
+    std::function<double(double,double)> f2[3];
+    std::function<double(double,double)> df2[3][3];
+    
+    // TODO dim=2？
+    generate_test_fun_1d(f1,df1);
+    grid.grid_solve(f1,df1);
+
+    std::string output_path;
+    try{
+        output_path = root["output_path"].asString();
+    }catch(...){
+        std::cerr << "Invalid parameter output_path." << std::endl;
+        exit(1);
+    }
+
+    // 输出
+    grid.grid_output(output_path);
 
     return 0;
 }
@@ -134,4 +171,12 @@ void generate_test_fun(std::function<double(double,double)> testfuns[3],
     d_testfuns[2][0] = [](double x, double y){return 2 * PI * cos(2 * PI * x) * sin(2 * PI * y);};
     d_testfuns[2][1] = [](double x, double y){return 2 * PI * sin(2 * PI * x) * cos(2 * PI * y);};
     d_testfuns[2][2] = [](double x, double y){return 4 * PI * PI * sin(2 * PI * x) * sin(2 * PI * y);};
+}
+
+void generate_test_fun_1d(std::function<double(double)> &testfuns,
+                          std::function<double(double)> &d_testfuns)
+{
+    testfuns = [](double x){return exp(sin(x));};
+    d_testfuns = [](double x){return exp(sin(x))*cos(x);};
+    //d_testfuns[1] = [](double x){return exp(sin(x)) * (cos(x) * cos(x) - sin(x));};
 }

@@ -8,5 +8,5 @@
     "epsilon" : 10e-10,
     "initial_guess": 1,
     "func_idx": 2,
-    "output_path": "/result"
+    "output_path": "/Multigrid/result"
 }
