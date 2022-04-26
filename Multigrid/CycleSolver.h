@@ -1,78 +1,74 @@
 #pragma once
 #include "TransferOperator.h"
 #include <functional>
+#include "Multigrid.h"
 
-template<int dim>
-class Multigrid;
+enum class SolverType
+{
+    VCycle,
+    FullMultigridVCycle
+};
 
-
-
-template<int dim>
+template <int dim>
 class CycleSolver
 {
-public:     //ctor & dtor
-    CycleSolver(Multigrid<dim> *grid_ptr_) : grid_ptr(grid_ptr_)
-    { 
-        if(grid_ptr->grid_rst_opt_type == RstOptType::injection)
-            rst_opt = new InjectionOperator<dim>(this);
-        else if(grid_ptr->grid_rst_opt_type == RstOptType::fullWeighting)
-            rst_opt = new FullWeightOperator<dim>(this);
-        if(grid_ptr->grid_itp_opt_type == ItpOptType::linear)
-            itp_opt = new LinearInterpolationOperator<dim>(this);
-        else if(grid_ptr->grid_itp_opt_type == ItpOptType::quadratic)
-            itp_opt = new QuadraticInterpolationOperator<dim>(this);
+public: // ctor & dtor
+    CycleSolver(Json::Value &root)
+    {
+        try
+        {
+            auto rstOptStr = root["restriction_operator"].asString();
+            auto itpOptStr = root["interpolation_operator"].asString();
+            if (rstOptStr == "injection")
+                rst_opt = new InjectionOperator<dim>();
+            else if (rstOptStr == "fullWeighting")
+                rst_opt = new FullWeightOperator<dim>();
+            else
+                throw 1;
+            if (itpOptStr == "linear")
+                itp_opt = new LinearInterpolationOperator<dim>();
+            else if (itpOptStr == "quadratic")
+                itp_opt = new QuadraticInterpolationOperator<dim>();
+            else
+                throw 1;
+        }
+        catch (...)
+        {
+            std::cerr << "Invalid transfer opetator" << '\n';
+        }
+
+        try
+        {
+            auto cycle_type = root["cycle"].asString();
+            if (cycle_type == "V-cycle")
+                solver_type = SolverType::VCycle;
+            else if (cycle_type == "FullMultigridVCycle")
+                solver_type = SolverType::FullMultigridVCycle;
+            else
+                throw 1;
+        }
+        catch (...)
+        {
+            std::cerr << "Invalid cycle type" << std::endl;
+            exit(1);
+        }
+
     }
-    virtual ~CycleSolver() { grid_ptr = nullptr;}
-    virtual void solve(std::function<double(double)>) = 0;
-    virtual void solve(std::function<double(double,double)>,
-                       std::function<double(double,double)>,
-                       std::function<double(double,double)>,
-                       std::function<double(double,double)>) = 0;
-private:    // data
+    virtual ~CycleSolver() { }
+
+    virtual void solve(const Multigrid<dim> &grid,std::function<double(double)> f)
+    {
+
+    }
+    virtual void solve(const Multigrid<dim> &grid,std::function<double(double, double)> f)
+    {
+        
+    }
+
+private:                                 // data
     RestrictionOperator<dim>   *rst_opt;   // restriction
-    InterpolationOperator<dim> *itp_opt;   // interpolation
-protected:  // methods
-    Multigrid<dim> *grid_ptr;
+    InterpolationOperator<dim> *itp_opt; // interpolation
+    SolverType                  solver_type; 
 
-};
-
-
-
-template<int dim>
-class VCycle : public CycleSolver<dim>
-{
-public:
-    VCycle(Multigrid<dim> *grid_ptr_): CycleSolver<dim>(grid_ptr_) { }
-    virtual void solve(std::function<double(double)>) override        //1d
-    {
     
-    }
-    virtual void solve(std::function<double(double,double)>,  
-                       std::function<double(double,double)>,
-                       std::function<double(double,double)>,
-                       std::function<double(double,double)>) override  //2d
-    {
-
-    }
-
-};
-
-
-
-template<int dim>
-class FullMultigridVCycle : public CycleSolver<dim>
-{
-public:
-    FullMultigridVCycle(Multigrid<dim> *grid_ptr_): CycleSolver<dim>(grid_ptr_) { }
-    virtual void solve(std::function<double(double)>) override
-    {
-    
-    }
-    virtual void solve(std::function<double(double,double)>,
-                       std::function<double(double,double)>,
-                       std::function<double(double,double)>,
-                       std::function<double(double,double)>) override
-    {
-
-    }
 };

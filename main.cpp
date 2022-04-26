@@ -1,12 +1,13 @@
 #include <iostream>
 #include <fstream>
+#include <functional>
 #include <string>
 #include <jsoncpp/json/json.h>
 #include <eigen3/Eigen/Dense>
 #include "Grid.h"
 #include "Array2D.h"
 #include "Multigrid/Multigrid.h"
-#include <functional>
+#include "Multigrid/CycleSolver.h"
 
 
 // test tool
@@ -99,7 +100,9 @@ int run_multigrid()
     // 根据json生成网格
     Multigrid<dim> grid(root);  // TODO: 如何摆脱dim的硬编码？
 
-
+    // 生成求解器 
+    CycleSolver<dim> solver(root);
+    
     // 求解线性方程组,把结果直接写在网格里（在把网格上的未知数向量化时，我们按字典序排列）
     int fun_idx;
     try{ 
@@ -122,7 +125,7 @@ int run_multigrid()
 
     // 网格求解
     generate_test_fun_1d(f1,df1); // TODO dim=2？
-    grid.grid_solve(f1);
+    solver.solve(grid,f1);
 
     std::string output_path;
     try{

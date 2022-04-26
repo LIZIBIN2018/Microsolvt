@@ -7,49 +7,29 @@
 #include "../Array2D.h" //TODO Cmake里解决这个问题
 #include "../Array1D.h" //TODO Cmake里解决这个问题
 #include "TransferOperator.h"
-#include "CycleSolver.h"  // 代表cycle的类型
-
+#include <eigen3/Eigen/Eigen>
 
 
 template <int dim>
 class Multigrid
 {
 private:
-    Array2D<GridNode>   *grid_node_arr_ptr_2d = nullptr; // 2D grid
-    Array1D<GridNode>   *grid_node_arr_ptr_1d = nullptr; // 1D grid
+    Eigen::MatrixXd      data;
     GridBdryType         bdryType;
     double               grid_length;     // h
     double               inv_grid_length; // floor(?) = n
-    unsigned             grid_size;     // n+1
+    unsigned             grid_size;     // n-1
     int                  grid_node_num;
     int                  max_itr_num; // maximum times for iteration
     double               epsilon;  // tolerance
+    
 
-
-public: // solver properties
-    CycleSolver<dim>    *grid_solver; 
-    RstOptType           grid_rst_opt_type;
-    ItpOptType           grid_itp_opt_type;
-   
 public:
     Multigrid() {}
     Multigrid(const Json::Value &root);
     Multigrid(const Multigrid &) = delete;
-    ~Multigrid() 
-    {
-        delete grid_node_arr_ptr_1d;  grid_node_arr_ptr_1d = nullptr;
-        delete grid_node_arr_ptr_2d;  grid_node_arr_ptr_2d = nullptr;
-        delete grid_solver;           grid_solver = nullptr;
-    } 
 
     void grid_initialization();
-    // TODO这丑陋的写法
-    void grid_solve(std::function<double(double)> f); 
-    void grid_solve(std::function<double(double,double)>f,
-                      std::function<double(double,double)>df_dx,
-                      std::function<double(double,double)>df_dy,
-                      std::function<double(double,double)>neg_laplacian_f);
-
     void grid_output(std::string path);
 
 private: //TOOLS
@@ -67,7 +47,7 @@ Multigrid<dim>::Multigrid(const Json::Value &root)
         if (grid_length <= 0)
             throw 1;
         inv_grid_length = 1.0 / grid_length;
-        grid_size = floor(inv_grid_length) + 1; // n + 1
+        grid_size = floor(inv_grid_length) - 1; // n - 1
         grid_length = 1.0 / (grid_size - 1);    // h 重新计算，保证等分
         grid_node_num = grid_size; //TODO
         if (dim == 2)
@@ -79,92 +59,10 @@ Multigrid<dim>::Multigrid(const Json::Value &root)
         exit(1);
     }
 
-    // 设置网格的边界条件 //TODELETE 没必要
-    try
-    {
-        auto bdry_type_str = root["bdry_type"].asString();
-        if (bdry_type_str == std::string("Dirichlet"))
-            this->bdryType = GridBdryType::Dirichlet;
-        else if (bdry_type_str == std::string("Neumann"))
-            this->bdryType = GridBdryType::Neumann;
-        else if (bdry_type_str == std::string("DirichletNeumann"))
-            this->bdryType = GridBdryType::DirichletNeumann;
-        else if (bdry_type_str == std::string("NeumannDirichlet"))
-            this->bdryType = GridBdryType::NeumannDirichlet;
-        else
-            throw 1;
-    }
-    catch (...)
-    {
-        std::cerr << "Invalid parameter bdry_type." << std::endl;
-        exit(1);
-    }
 
     // 生成网格
-    if (dim == 2)
-        grid_node_arr_ptr_2d = new Array2D<GridNode>(grid_size, grid_size);
-    if (dim == 1)
-        grid_node_arr_ptr_1d = new Array1D<GridNode>(grid_size);
+    data.resize(grid_size,grid_size); //TOCHECK
 
-
-    // 设置Transfer算子类型(必须在设置求解器之前)
-    try
-    {
-        auto rstOptStr = root["restriction_operator"]  .asString();
-        auto itpOptStr = root["interpolation_operator"].asString();
-        if(rstOptStr == "injection")
-            grid_rst_opt_type = RstOptType::injection;
-        else if(rstOptStr == "fullWeighting")
-            grid_rst_opt_type = RstOptType::fullWeighting;
-        else 
-            throw 1;
-        if(itpOptStr == "linear")
-            grid_rst_opt_type = RstOptType::injection;
-        else if(itpOptStr == "quadratic")
-            grid_rst_opt_type = RstOptType::fullWeighting;
-        else 
-            throw 1;
-        
-    }
-    catch(...)
-    {
-        std::cerr << "Invalid transfer opetator" << '\n';
-    }
-    
-
-    // 设置求解器
-    try
-    {
-        auto cycle_type = root["cycle"].asString();
-        if(cycle_type == "V-cycle")
-            grid_solver = new VCycle<dim>(this);
-        else if(cycle_type == "FullMultigridVCycle")
-            grid_solver = new FullMultigridVCycle<dim>(this);
-        else
-            throw 1;
-    }
-    catch(...)
-    {
-        std::cerr << "Invalid cycle type" << std::endl;
-        exit(1);
-    }
-}
-
-
-template <int dim> //
-void Multigrid<dim>::grid_solve(
-    std::function<double(double)> f)
-{
-    grid_solver->solve(f);
-}
-
-template<int dim>
-void Multigrid<dim>::grid_solve(std::function<double(double,double)>f,
-                      std::function<double(double,double)>df_dx,
-                      std::function<double(double,double)>df_dy,
-                      std::function<double(double,double)>neg_laplacian_f)
-{
-    grid_solver->solve(f,df_dx,df_dy,neg_laplacian_f);
 }
 
 template <int dim>
