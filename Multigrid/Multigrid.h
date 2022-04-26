@@ -57,12 +57,14 @@ public:
                       std::function<double(double,double)>df_dx,
                       std::function<double(double,double)>df_dy,
                       std::function<double(double,double)>neg_laplacian_f);
-                      
+
     void grid_output(std::string path);
 
 private: //TOOLS
 };
 
+
+// implementation 
 template <int dim>
 Multigrid<dim>::Multigrid(const Json::Value &root)
 {

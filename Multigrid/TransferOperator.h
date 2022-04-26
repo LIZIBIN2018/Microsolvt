@@ -52,7 +52,7 @@ class LinearInterpolationOperator: public InterpolationOperator<dim>
 
 
 template<int dim>
-class QuadraticOperato: public InterpolationOperator<dim>
+class QuadraticOperator: public InterpolationOperator<dim>
 {
 
 };
