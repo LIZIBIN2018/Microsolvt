@@ -6,8 +6,8 @@
 #include "../Grid.h"
 #include "../Array2D.h" //TODO Cmake里解决这个问题
 #include "../Array1D.h" //TODO Cmake里解决这个问题
+#include "TransferOperator.h"
 #include "CycleSolver.h"  // 代表cycle的类型
-#include "GridFiller.h"   // 帮助不同维度的网格进行填充
 
 enum class RstOptType // Restriction Operator
 {
@@ -37,19 +37,31 @@ private:
     int max_itr_num; // maximum times for iteration
     double epsilon;  // tolerance
 
+    CycleSolver<dim> *grid_solver;       // how to solve 
+   
 public:
     Multigrid() {}
     Multigrid(const Json::Value &root);
     Multigrid(const Multigrid &) = delete;
+    ~Multigrid() 
+    {
+        delete rst_opt; 
+        rst_opt = nullptr;
+        delete grid_solver; 
+        grid_solver = nullptr;
+        delete InterpolationOperator;
+        InterpolationOperator = nullptr;
+    } 
 
     void grid_initialization();
     // TODO这丑陋的写法
-    void grid_solve(std::function<double(double)> f,
-                    std::function<double(double)> df); // dim = 1, df = {f'}, dim = 2 df ={fx, fy, laplace f}
+    void grid_solve(std::function<double(double)> f); 
     void grid_solve(std::function<double(double, double)> f,
                     std::vector<std::function<double(double, double)>> df); // dim = 1, df = {f'}, dim = 2 df ={fx, fy, laplace f}
 
     void grid_output(std::string path);
+
+private: //TOOLS
 };
 
 template <int dim>
@@ -108,13 +120,12 @@ Multigrid<dim>::Multigrid(const Json::Value &root)
 template <int dim>
 void Multigrid<dim>::grid_initialization()
 {
-    // 填充网格
+    
 }
 
 template <int dim>
 void Multigrid<dim>::grid_solve(
-    std::function<double(double)> f,
-    std::function<double(double)> df)
+    std::function<double(double)> f)
 {
 
 }

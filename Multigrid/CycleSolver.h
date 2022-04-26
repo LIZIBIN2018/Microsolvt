@@ -5,15 +5,23 @@ template<int dim>
 class Multigrid;
 
 template<int dim>
-class Cycle
+class CycleSolver
 {
+public:
+    CycleSolver()
+    {
+        
+    }
+private:
+    RestrictionOperator *rst_opt;   // restriction
+    InterpolationOperator *itp_opt; // interpolation
 protected: 
     Multigrid<dim> grid_ptr;
     void solve() = 0;
 };
 
 template<int dim>
-class VCycle : public Cycle
+class VCycle : public CycleSolver
 {
 public:
     void solve() override
@@ -23,7 +31,7 @@ public:
 };
 
 template<int dim>
-class FullMultigridCycle : public Cycle
+class FullMultigridCycle : public CycleSolver
 {
 public:
     void solve() override
