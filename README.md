@@ -24,4 +24,12 @@ Our project will depend on two third-party libraries:
 
 ## The workflow
 1. Build the framwork of multigrid, transfer the main part of work to the solver.
-2. Implement
+2. The solver should execute the main part of algorithm. 
+    2.1 Build the framwork of solver.
+    2.2 Implement the multigrid algorithm
+        2.2.1 Generate the matrix.
+        2.2.2 Iteration.
+3. Finish the code of transfer operator, according to the dim.
+4. Output the result.
+5. Post processing.
+
