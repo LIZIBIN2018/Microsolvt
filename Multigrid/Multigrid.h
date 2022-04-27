@@ -40,7 +40,7 @@ Multigrid<dim>::Multigrid(const Json::Value &root)
     // 写入属性
     grid_size = root["grid_n"].asInt() - 1; // n - 1
     if(grid_size <= 0 && (grid_size & (grid_size + 1)) != 0)
-        throw std::exception("Invalid grid_n");
+        throw "Invalid grid_n";
     grid_length = 1.0 / (grid_size + 1);
     
     grid_node_num = grid_size;
@@ -49,9 +49,9 @@ Multigrid<dim>::Multigrid(const Json::Value &root)
 
     // 生成网格
     if(dim == 1)
-        data.resize(grid_size,1); //TOCHECK
+        data.resize(grid_size, 1); //TOCHECK
     if(dim == 2)
-        data.resize(grid_size,grid_size); //TOCHECK
+        data.resize(grid_size * grid_size, 1); //TOCHECK
 }
 
 template <int dim>
@@ -76,7 +76,7 @@ void Multigrid<dim>::grid_output(std::string path)
                     f << data(j + grid_size*i) << ' ';
                 }
             }
-            f << endl;
+            f << std::endl;
         }
     }
 

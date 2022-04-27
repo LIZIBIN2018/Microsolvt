@@ -1,3 +1,4 @@
+clear
 cmake -B build 
 cmake --build build 
 ./build/Microsolvt
