@@ -224,8 +224,8 @@ public: // ctor & dtor
         if (grid_size_cur + 1 > coarest)
         {
             auto f_new = (*rst_opt)(f - Av(v), grid_size_cur);
-            auto v_new = Eigen::MatrixXd::zero((grid_size_cur + 1) / 2 - 1, 1);
-            v_new = VCycle(v_new, f_new, nu1, nu2, (grid_size_cur + 1) / 2 - 1);
+            auto v_new = Eigen::MatrixXd::zero(grid_size_cur >> 1, 1);
+            v_new = VCycle(v_new, f_new, nu1, nu2, grid_size_cur >> 1);
             v += (*itp_opt)(v_new, grid_size_cur);
         }
         for (int i = 0; i < nu2; i++)
