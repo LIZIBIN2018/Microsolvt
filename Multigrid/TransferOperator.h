@@ -122,14 +122,14 @@ class FullWeightOperator: public RestrictionOperator<dim>
         return (mat(idx - 1, 0) + mat(idx - 1, 0) * 2 + mat(idx - 1, 0)) * 0.25;
     }
     virtual double restrict2D(Eigen::MatrixXd& mat, size_t idx, size_t grid_num){
-        return (mat(idx - grid_num - 1, 0)    +
-                mat(idx - grid_num, 0)    * 2 +
-                mat(idx - grid_num + 1, 0)    +
-                mat(idx - 1, 0)           * 2 +
-                mat(idx, 0)               * 4 +
-                mat(idx + 1, 0)           * 2 +
-                mat(idx + grid_num - 1)       +
-                mat(idx + grid_num, 0)    * 2 +
+        return (mat(idx - grid_num - 1, 0)     +
+                mat(idx - grid_num,     0) * 2 +
+                mat(idx - grid_num + 1, 0)     +
+                mat(idx - 1       ,     0) * 2 +
+                mat(idx           ,     0) * 4 +
+                mat(idx + 1       ,     0) * 2 +
+                mat(idx + grid_num - 1   )     +
+                mat(idx + grid_num,     0) * 2 +
                 mat(idx + grid_num + 1, 0)
                 ) * 0.0625;
     }
