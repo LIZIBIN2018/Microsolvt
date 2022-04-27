@@ -105,7 +105,7 @@ public: // ctor & dtor
         }
         else if(solver_type == SolverType::FullMultigridVCycle)
         {
-            vh = FullMultigridVCycle(vh,fh,3,grid.grid_size); //TODO
+            vh = FullMultigridVCycle(vh,fh,3,grid.grid_size); 
         }
         for(int i = 0; i < grid_size*grid_size; i++) 
         {
@@ -113,37 +113,47 @@ public: // ctor & dtor
         } 
     }
 
-    // TODO 既然传引用，那么还要返回么？
     Eigen::MatrixXd VCycle(Eigen::MatrixXd &v, Eigen::MatrixXd &f, size_t nu1, size_t nv2, size_t grid_size_cur)
     {
         ////迭代法：v=Rw v + wD^-1f
         // 迭代矩阵装配 TODO
-        Eigen::MatrixXd A;
-        Eigen::MatrixXd Rw;
-        Eigen::MatrixXd wD_inv;
-        if(dim == 1)
-        {
+        Eigen::MatrixXd A; //[-1 2 -1]/hh
 
-        }
-        else if(dim == 2)
+        // A finished
+        A = 2*Eigen::MatrixXd::Identity(grid_size_cur, grid_size_cur);
+        for(int i = 0;i < grid_size_cur - 1;i++)
         {
+            A(i,i+1) = 1;
+            A(i+1,i) = 1;
+        }
+        A = A*pow(grid_size_cur+1,2);
 
-        }
-        // 对方程A^h u^h = f^h 迭代nu1次
-        for(int i = 0;i<nu1;i++)
+        if (dim == 1)
         {
-            v = Rw*v + wD_inv*f;
+            Eigen::MatrixXd Rw;
+            double wD_inv;
+            Rw = Eigen::MatrixXd::Identity(grid_size_cur, grid_size_cur) - A / pow(grid_size_cur, 2);
+            wD_inv = wD_inv = 1 / (3 * pow(1 + grid_size_cur, 2));
+            // 对方程A^h u^h = f^h 迭代nu1次
+            for (int i = 0; i < nu1; i++)
+            {
+                v = Rw * v + wD_inv * f;
+            }
+            if (grid_size_cur + 1 > coarest)
+            {
+                auto f_new = (*rst_opt)(f - A * v, grid_size_cur);
+                auto v_new = Eigen::MatrixXd::zero((grid_size_cur + 1) / 2 - 1, 1);
+                v_new = VCycle(v_new, f_new, nu1, nu2, (grid_size_cur + 1) / 2 - 1);
+                v += (*itp_opt)(v_new, grid_size_cur);
+            }
+            for (int i = 0; i < nu2; i++)
+            {
+                v = Rw * v + wD_inv * f;
+            }
         }
-        if(grid_size_cur + 1 > coarest)
+        else if (dim == 2)
         {
-            auto f_new = (*rst_opt)(f - A*v, grid_size_cur);
-            auto v_new = Eigen::MatrixXd::zero((grid_size_cur+1)/2 -1, 1);
-            v_new      = VCycle(v_new, f_new, nu1, nu2, (grid_size_cur+1)/2 -1);
-            v         += (*itp_opt)(v_new, grid_size_cur);
-        }
-        for(int i = 0; i<nu2; i++)
-        {
-            v = Rw*v + wD_inv*f;
+                
         }
     }
     
