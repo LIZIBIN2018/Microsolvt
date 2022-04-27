@@ -67,5 +67,29 @@ Multigrid<dim>::Multigrid(const Json::Value &root)
 template <int dim>
 void Multigrid<dim>::grid_output(std::string path)
 {
-    //TODO
+    std::ofstream f(path);
+    f.precision(17);
+    if(dim == 1){
+        f << 0 << ' ';
+        for(int i = 0;i < grid_size; i++){
+            f << data(i) << ' ';
+        }
+        f<< 0 << ' ';
+    }
+    if(dim == 2){
+        for(int i = 0;i<grid_size + 2;++i){
+            for(int j = 0;j<grid_size + 2;++j){
+                if(i == 0 || i == grid_size+1 || j == 0 || j == grid_size+1){
+                    f << 0 << ' ';
+                }
+                else{
+                    f << data(j + grid_size*i) << ' ';
+                }
+            }
+            f << endl;
+        }
+    }
+
+    f.close();
+    std::cout << "Job completes with results written to " << path << std::endl;
 }
