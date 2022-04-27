@@ -1,5 +1,5 @@
 {
-    "grid_n": 32,
+    "grid_n": 8,
     "bdry_type": "Neumann",
     "restriction_operator": "injection",
     "interpolation_operator": "linear",
@@ -10,5 +10,5 @@
     "func_idx": 2,
     "max_iteration": 5,
     "rel_accuracy": 1e-5,
-    "output_path": "/Multigrid/result"
+    "output_path": "/Multigrid/result.txt"
 }

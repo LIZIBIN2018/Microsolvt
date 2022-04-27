@@ -3,9 +3,6 @@
 #include <utility>
 #include <functional>
 #include <jsoncpp/json/json.h>
-#include "../Grid.h"
-#include "../Array2D.h" //TODO Cmake里解决这个问题
-#include "../Array1D.h" //TODO Cmake里解决这个问题
 #include "TransferOperator.h"
 #include <eigen3/Eigen/Eigen>
 
@@ -18,9 +15,6 @@ public:
     GridBdryType         bdryType;
     double               grid_length;     // h
     unsigned             grid_size;     // n-1
-    int                  grid_node_num;
-    int                  max_itr_num; // maximum times for iteration
-    double               epsilon;  // tolerance
     
 
 public:
@@ -42,10 +36,6 @@ Multigrid<dim>::Multigrid(const Json::Value &root)
     if(grid_size <= 0 && (grid_size & (grid_size + 1)) != 0)
         throw "Invalid grid_n";
     grid_length = 1.0 / (grid_size + 1);
-    
-    grid_node_num = grid_size;
-    if (dim == 2)
-        grid_node_num *= grid_size;
 
     // 生成网格
     if(dim == 1)
