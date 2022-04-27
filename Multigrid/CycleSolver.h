@@ -72,21 +72,13 @@ public: // ctor & dtor
         Eigen::MatrixXd vh = Eigen::MatrixXd::Zero(grid.grid_size, 1);
         Eigen::MatrixXd fh = Eigen::MatrixXd::Zero(grid.grid_size, 1);
         fh.resize(grid.grid_size, 1);
+        for (int i = 0; i < grid.grid_size; i++)
+        {
+            fh(i) = f((i + 1) * grid.grid_length) * grid.grid_length * grid.grid_length;
+        }
+
         for (size_t iter = 0; iter < max_iteration; iter++)
         {
-            // Calculate Relative Error
-            Eigen::MatrixXd errorVector = getResidue(vh, fh, grid.grid_size);
-            if(iter == 0) std::cout << "HHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHH" << errorVector << std::endl;
-            double max_norm = maxNorm(errorVector);
-            double rel_error = max_norm / maxNorm(vh);
-            std::cout << "Iteration " << iter << ":    Error = " << rel_error << std::endl;
-            if(rel_error < rel_accuracy)
-                break;
-
-            for(int i = 0;i < grid.grid_size;i++)
-            {
-                fh(i) = f((i+1)*grid.grid_length)*grid.grid_length*grid.grid_length;
-            }
             if(solver_type == SolverType::VCycle)
             {
                 VCycle(vh, fh, 3, 3, grid.grid_size); //nu1 ,nu2 = ? TODO
@@ -99,6 +91,14 @@ public: // ctor & dtor
             {
                 grid.data(i) = vh(i);
             }
+
+            // Calculate Relative Error
+            Eigen::MatrixXd errorVector = getResidue(vh, fh, grid.grid_size);
+            double residue = maxNorm(errorVector);
+            double rel_error = residue / maxNorm(vh);
+            std::cout << "Iteration " << iter << ":    AbsError = " << residue << ", RelError = " << rel_error << std::endl;
+            if(rel_error < rel_accuracy)
+                break;
         }
     }
     
@@ -110,14 +110,6 @@ public: // ctor & dtor
         fh.resize(grid.grid_size * grid.grid_size, 1);
         for (size_t iter = 0; iter < max_iteration; iter++)
         {
-            // Calculate Relative Error
-            Eigen::MatrixXd errorVector = getResidue(vh, fh, grid.grid_size);
-            double max_norm = maxNorm(errorVector);
-            double rel_error = max_norm / maxNorm(vh);
-            std::cout << "Iteration " << iter << ":    Error = " << rel_error << std::endl;
-            if(rel_error < rel_accuracy)
-                break;
-
             for (int i = 0; i < grid.grid_size; i++)
             {
                 for (int j = 0; j < grid.grid_size; j++)
@@ -137,6 +129,14 @@ public: // ctor & dtor
             {
                 grid.data(i) = vh(i);
             } 
+
+            // Calculate Relative Error
+            Eigen::MatrixXd errorVector = getResidue(vh, fh, grid.grid_size);
+            double max_norm = maxNorm(errorVector);
+            double rel_error = max_norm / maxNorm(vh);
+            std::cout << "Iteration " << iter << ":    Error = " << rel_error << std::endl;
+            if(rel_error < rel_accuracy)
+                break;
         }
     }
 
@@ -214,11 +214,13 @@ public: // ctor & dtor
     void VCycle(Eigen::MatrixXd &v, Eigen::MatrixXd &f, size_t nu1, size_t nu2, size_t grid_size_cur)
     {
         const size_t threadNum = 16;
-        
+
+        // std::cout << "f = " << f << std::endl;
         // 对方程A^h u^h = f^h 迭代nu1次
         for (int i = 0; i < nu1; i++)
         {
             Relax(v, f, grid_size_cur);
+            // std::cout << "Size = " << grid_size_cur << "Residue = " << getResidue(v, f, grid_size_cur) << std::endl;
         }
 
             // std::cout << grid_size_cur << std::endl;
@@ -259,7 +261,7 @@ private: // data
     RestrictionOperator<dim>   *rst_opt = nullptr;   // restriction
     InterpolationOperator<dim> *itp_opt = nullptr;   // interpolation
     SolverType                  solver_type; 
-    size_t                      coarest = 4;
+    size_t                      coarest = 2;
     size_t                      max_iteration;
     double                      rel_accuracy;
 
