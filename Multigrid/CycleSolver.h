@@ -4,6 +4,7 @@
 #include "Multigrid.h"
 #include <utility>
 #include <vector>
+#include <tbb/tbb.h>
 
 enum class SolverType
 {
@@ -140,48 +141,96 @@ public: // ctor & dtor
         }
     }
 
+    void Relax(Eigen::MatrixXd& v, Eigen::MatrixXd &f, size_t grid_size_cur){
+        Eigen::MatrixXd v0 = v;
+        if(dim == 1){
+            tbb::parallel_for(tbb::blocked_range(0, threadNum), [&](size_t i){
+                size_t bound = std::min(grid_size_cur / threadNum * (i + 1), grid_size_cur);
+                for (size_t j = doubleLength / threadNum * i; j < bound; j++){
+                    v(j) = v0(j) - omega * 0.5 * (2 * v0(j) - (j == 0 ? 0 : v0(j - 1)) - (j == grid_size_cur - 1 ? 0 : v0(j + 1)))
+                            + omega * 2 * (grid_size_cur + 1) * (grid_size_cur + 1) * f(j);
+                }
+            });
+        }
+        else if(dim == 2){
+            tbb::parallel_for(tbb::blocked_range<size_t>(0, threadNum), [&](size_t i){
+                size_t bound = std::min(grid_size_cur / threadNum * (i + 1), grid_size_cur);
+                for (size_t row = 0; row < bound; row++)
+                {
+                    for (size_t col = 0; col < grid_size_cur; col++)
+                    {
+                        size_t idx = row * grid_size_cur + col;
+                        v(idx) = v0(idx) 
+                                - omega * 0.25 * (4 * v0(idx) 
+                                    - (col == 0                 || row == 0                 ? 0 : v0(place2index(row - 1, col - 1))) 
+                                    - (col == 0                 || row == grid_size_cur - 1 ? 0 : v0(place2index(row - 1, col + 1))) 
+                                    - (col == grid_size_cur - 1 || row == 0                 ? 0 : v0(place2index(row + 1, col - 1))) 
+                                    - (col == grid_size_cur - 1 || row == grid_size_cur - 1 ? 0 : v0(place2index(row + 1, col + 1))))
+                                + omega * 4 * (grid_size_cur + 1) * (grid_size_cur + 1) * f(idx);
+                    }
+                }
+            });
+        }
+        else{
+            throw std::exception("Invalid dim");
+        }
+    }
+
+    Eigen::MatrixXd Av(Eigen::MatrixXd v, size_t grid_size_cur){
+        Eigen::MatrixXd v0 = v;
+        if(dim == 1){
+            tbb::parallel_for(tbb::blocked_range(0, threadNum), [&](size_t i){
+                size_t bound = std::min(grid_size_cur / threadNum * (i + 1), grid_size_cur);
+                for (size_t j = doubleLength / threadNum * i; j < bound; j++){
+                    v(j) = pow(grid_size_cur, 2) * (2 * v0(j) - (j == 0 ? 0 : v0(j - 1)) - (j == grid_size_cur - 1 ? 0 : v0(j + 1)));
+                }
+            });
+        }
+        else if(dim == 2){
+            tbb::parallel_for(tbb::blocked_range<size_t>(0, threadNum), [&](size_t i){
+                size_t bound = std::min(grid_size_cur / threadNum * (i + 1), grid_size_cur);
+                for (size_t row = 0; row < bound; row++)
+                {
+                    for (size_t col = 0; col < grid_size_cur; col++)
+                    {
+                        size_t idx = row * grid_size_cur + col;
+                        v(idx) = pow(grid_size_cur, 2) * (4 * v0(idx) 
+                                    - (col == 0                 || row == 0                 ? 0 : v0(place2index(row - 1, col - 1))) 
+                                    - (col == 0                 || row == grid_size_cur - 1 ? 0 : v0(place2index(row - 1, col + 1))) 
+                                    - (col == grid_size_cur - 1 || row == 0                 ? 0 : v0(place2index(row + 1, col - 1))) 
+                                    - (col == grid_size_cur - 1 || row == grid_size_cur - 1 ? 0 : v0(place2index(row + 1, col + 1))));
+                    }
+                }
+            });
+        }
+        else{
+            throw std::exception("Invalid dim");
+        }
+        return v;
+    }
+
     // TODO 既然传引用，那么还要返回么？
-    Eigen::MatrixXd VCycle(Eigen::MatrixXd &v, Eigen::MatrixXd &f, size_t nu1, size_t nv2, size_t grid_size_cur)
+    Eigen::MatrixXd VCycle(Eigen::MatrixXd &v, Eigen::MatrixXd &f, size_t nu1, size_t nu2, size_t grid_size_cur)
     {
-        ////迭代法：v=Rw v + wD^-1f
-        // 迭代矩阵装配 TODO
-        Eigen::MatrixXd A; //[-1 2 -1]/hh
-
-        // A finished
-        A = 2*Eigen::MatrixXd::Identity(grid_size_cur, grid_size_cur);
-        for(int i = 0;i < grid_size_cur - 1;i++)
+        const double omega = 2.0 / 3;
+        const size_t threadNum = 16;
+        
+        // 对方程A^h u^h = f^h 迭代nu1次
+        for (int i = 0; i < nu1; i++)
         {
-            A(i,i+1) = 1;
-            A(i+1,i) = 1;
+            Relax(v, f, grid_size_cur);
         }
-        A = A*pow(grid_size_cur+1,2);
 
-        if (dim == 1)
+        if (grid_size_cur + 1 > coarest)
         {
-            Eigen::MatrixXd Rw;
-            double wD_inv;
-            Rw = Eigen::MatrixXd::Identity(grid_size_cur, grid_size_cur) - A / pow(grid_size_cur, 2);
-            wD_inv = wD_inv = 1 / (3 * pow(1 + grid_size_cur, 2));
-            // 对方程A^h u^h = f^h 迭代nu1次
-            for (int i = 0; i < nu1; i++)
-            {
-                v = Rw * v + wD_inv * f;
-            }
-            if (grid_size_cur + 1 > coarest)
-            {
-                auto f_new = (*rst_opt)(f - A * v, grid_size_cur);
-                auto v_new = Eigen::MatrixXd::zero((grid_size_cur + 1) / 2 - 1, 1);
-                v_new = VCycle(v_new, f_new, nu1, nu2, (grid_size_cur + 1) / 2 - 1);
-                v += (*itp_opt)(v_new, grid_size_cur);
-            }
-            for (int i = 0; i < nu2; i++)
-            {
-                v = Rw * v + wD_inv * f;
-            }
+            auto f_new = (*rst_opt)(f - Av(v), grid_size_cur);
+            auto v_new = Eigen::MatrixXd::zero((grid_size_cur + 1) / 2 - 1, 1);
+            v_new = VCycle(v_new, f_new, nu1, nu2, (grid_size_cur + 1) / 2 - 1);
+            v += (*itp_opt)(v_new, grid_size_cur);
         }
-        else if (dim == 2)
+        for (int i = 0; i < nu2; i++)
         {
-
+            Relax(v, f, grid_size_cur);
         }
     }
     
@@ -232,9 +281,8 @@ private: // TOOLS
         int n = round(1.0/grid_length);
         return std::pair<int, int>{index%};
     }
-    int place2index(int i,int j)
+    size_t place2index(size_t row, size_t col, size_t grid_size)
     {//TODO
-        return 0;
+        return row * grid_size + col;
     }
-
 };
