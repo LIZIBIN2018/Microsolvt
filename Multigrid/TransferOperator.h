@@ -17,7 +17,7 @@ public:
         Eigen::MatrixXd rst;
         const size_t threadNum = 16;
         size_t halfLength = grid_num >> 1;
-        if(dim == 0){
+        if(dim == 1){
             if(grid_num & (grid_num + 1) != 0 || v.size() != grid_num)
                 throw std::exception("Invalid vector size");
             rst.resize(halfLength, 1);
@@ -28,7 +28,7 @@ public:
                 }
             });
         }
-        else if(dim == 1){
+        else if(dim == 2){
             if(grid_num & (grid_num + 1) != 0 || v.size() != grid_num * grid_num)
                 throw std::exception("Invalid vector size");
             rst.resize(halfLength * halfLength, 1);
@@ -63,7 +63,7 @@ public:
         Eigen::MatrixXd itp;
         const size_t threadNum = 16;
         size_t doubleLength = grid_num << 1 | 1;
-        if(dim == 0){
+        if(dim == 1){
             if(grid_num & (grid_num + 1) != 0 || v.size() != grid_num)
                 throw std::exception("Invalid vector size");
             itp.resize(doubleLength, 1);
@@ -74,7 +74,7 @@ public:
                 }
             });
         }
-        else if(dim == 1){
+        else if(dim == 2){
             if(grid_num & (grid_num + 1) != 0 || v.size() != grid_num * grid_num)
                 throw std::exception("Invalid vector size");
             itp.resize(doubleLength * doubleLength, 1);
