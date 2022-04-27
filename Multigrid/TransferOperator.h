@@ -18,10 +18,8 @@ public:
         const size_t threadNum = 16;
         size_t halfLength = grid_num >> 1;
         if(dim == 1){
-            if(grid_num & (grid_num + 1) != 0 || v.size() != grid_num)
-                throw std::exception("Invalid vector size");
             rst.resize(halfLength, 1);
-            tbb::parallel_for(tbb::blocked_range<size_t>(0, threadNum), [&](size_t i){
+            tbb::parallel_for((size_t)0, threadNum, (size_t)1,   [&](size_t i){
                 size_t bound = std::min(halfLength / threadNum * (i + 1), halfLength);
                 for (size_t j = rst.size() / threadNum * i; j < bound; j++){
                     rst(j, 0) = restrict1D(v, j << 1 | 1);
@@ -29,10 +27,8 @@ public:
             });
         }
         else if(dim == 2){
-            if(grid_num & (grid_num + 1) != 0 || v.size() != grid_num * grid_num)
-                throw std::exception("Invalid vector size");
             rst.resize(halfLength * halfLength, 1);
-            tbb::parallel_for(tbb::blocked_range<size_t>(0, threadNum), [&](size_t i){
+            tbb::parallel_for((size_t)0, threadNum, (size_t)1,   [&](size_t i){
                 size_t bound = std::min(halfLength / threadNum * (i + 1), halfLength);
                 for (size_t row = 0; row < bound; row++)
                 {
@@ -44,7 +40,7 @@ public:
             });
         }
         else{
-            throw std::exception("Invalid dim");
+            throw "Invalid dim";
         }
         return rst;
     }
@@ -64,10 +60,8 @@ public:
         const size_t threadNum = 16;
         size_t doubleLength = grid_num << 1 | 1;
         if(dim == 1){
-            if(grid_num & (grid_num + 1) != 0 || v.size() != grid_num)
-                throw std::exception("Invalid vector size");
             itp.resize(doubleLength, 1);
-            tbb::parallel_for(tbb::blocked_range<size_t>(0, threadNum), [&](size_t i){
+            tbb::parallel_for((size_t)0, threadNum, (size_t)1,   [&](size_t i){
                 size_t bound = std::min(doubleLength / threadNum * (i + 1), doubleLength);
                 for (size_t j = doubleLength / threadNum * i; j < bound; j++){
                     itp(j) = interpolate1D(j == 0 ? 0 : v((j - 1) >> 1), j == doubleLength - 1 ? 0 : v(j >> 1, 0));
@@ -75,10 +69,8 @@ public:
             });
         }
         else if(dim == 2){
-            if(grid_num & (grid_num + 1) != 0 || v.size() != grid_num * grid_num)
-                throw std::exception("Invalid vector size");
             itp.resize(doubleLength * doubleLength, 1);
-            tbb::parallel_for(tbb::blocked_range<size_t>(0, threadNum), [&](size_t i){
+            tbb::parallel_for((size_t)0, threadNum, (size_t)1,   [&](size_t i){
                 size_t bound = std::min(doubleLength / threadNum * (i + 1), doubleLength);
                 for (size_t row = 0; row < bound; row++)
                 {
@@ -95,7 +87,7 @@ public:
             });
         }
         else{
-            throw std::exception("Invalid dim");
+            throw "Invalid dim";
         }
         return itp;
     }

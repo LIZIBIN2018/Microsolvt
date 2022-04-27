@@ -146,15 +146,18 @@ bool read_json(string file, Json::Value &root)
     // 打开文件
     ifstream input;
     input.open(file);
-    if(!input.is_open()) { cerr<<"Error: file is not opened"<<endl; }
+    if (!input.is_open())
+    {
+        cerr << "Error: file is not opened" << endl;
+    }
 
     // 创建Json解析器
     Json::Reader reader;
-    
+
     // 读取数据，记录在root中
-    if(!reader.parse(input,root))
+    if (!reader.parse(input, root))
     {
-        cout <<"reader parse error: "<<strerror(errno)<<endl;
+        cout << "reader parse error: " << strerror(errno) << endl;
         return false;
     }
     return true;

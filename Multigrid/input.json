@@ -8,7 +8,7 @@
     "epsilon" : 10e-10,
     "initial_guess": 1,
     "func_idx": 2,
-    "max_itreation": 5,
+    "max_iteration": 5,
     "rel_accuracy": 1e-5,
     "output_path": "/Multigrid/result"
 }

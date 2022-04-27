@@ -69,13 +69,13 @@ public: // ctor & dtor
         if(itp_opt) delete itp_opt; 
     }
 
-    virtual void solve(const Multigrid<dim> &grid,std::function<double(double)> f)
+    void solve(Multigrid<dim> &grid, std::function<double(double)> f)
     {
         // 根据v(i) = 1/2*(v(i-1) + v(i+1) + h*h*fj) 构造Av = f, 此处f(j) = h*h*f(v(j))
 
-        Eigen::MatrixXd vh = Eigen::MatrixXd::Zero(grid.grid_size,1);
-        Eigen::MatrixXd fh = Eigen::MatrixXd::Zero(grid.grid_size,1);
-        fh.resize(grid.grid_size,1);
+        Eigen::MatrixXd vh = Eigen::MatrixXd::Zero(grid.grid_size, 1);
+        Eigen::MatrixXd fh = Eigen::MatrixXd::Zero(grid.grid_size, 1);
+        fh.resize(grid.grid_size, 1);
         for (size_t iter = 0; iter < max_iteration; iter++)
         {
             // TODO 并行
@@ -93,11 +93,11 @@ public: // ctor & dtor
             }
             for(int i = 0; i < grid.grid_size; i++) 
             {
-                grid.data(i, 0) = vh(i, 0);
+                grid.data(i) = vh(i);
             } 
 
             // Calculate Relative Error
-            double max_norm = (vh - As[0] * fh).maxCoeff();
+            double max_norm = (vh - Av(fh, grid.grid_size)).maxCoeff();
             std::cout << "Iteration " << iter << ":    Error = " << max_norm << std::endl;
             if(max_norm / vh.maxCoeff() < rel_accuracy)
                 break;
@@ -105,7 +105,7 @@ public: // ctor & dtor
     }
     
 
-    virtual void solve(const Multigrid<dim> &grid,std::function<double(double, double)> f)
+    void solve(Multigrid<dim> &grid,std::function<double(double, double)> f)
     {
         Eigen::MatrixXd vh = Eigen::MatrixXd::Zero(grid.grid_size * grid.grid_size, 1);
         Eigen::MatrixXd fh = Eigen::MatrixXd::Zero(grid.grid_size * grid.grid_size, 1);
@@ -131,7 +131,7 @@ public: // ctor & dtor
             }
             for(int i = 0; i < grid.grid_size*grid.grid_size; i++) 
             {
-                grid.data(i, 0) = vh(i, 0);
+                grid.data(i) = vh(i);
             } 
 
             // Calculate Relative Error
@@ -147,7 +147,7 @@ public: // ctor & dtor
         const size_t threadNum = 16;
         const double omega = 2.0 / 3;
         if(dim == 1){
-            tbb::parallel_for(tbb::blocked_range<size_t>(0, threadNum), [&](size_t i){
+            tbb::parallel_for((size_t)0, threadNum, (size_t)1,   [&](size_t i){
                 size_t bound = std::min(grid_size_cur / threadNum * (i + 1), grid_size_cur);
                 for (size_t j = grid_size_cur / threadNum * i; j < bound; j++){
                     v(j) = v0(j) - omega * 0.5 * (2 * v0(j) - (j == 0 ? 0 : v0(j - 1)) - (j == grid_size_cur - 1 ? 0 : v0(j + 1)))
@@ -156,7 +156,7 @@ public: // ctor & dtor
             });
         }
         else if(dim == 2){
-            tbb::parallel_for(tbb::blocked_range<size_t>(0, threadNum), [&](size_t i){
+            tbb::parallel_for((size_t)0, threadNum, (size_t)1,   [&](size_t i){
                 size_t bound = std::min(grid_size_cur / threadNum * (i + 1), grid_size_cur);
                 for (size_t row = 0; row < bound; row++)
                 {
@@ -183,7 +183,7 @@ public: // ctor & dtor
         Eigen::MatrixXd v0 = v;
         const size_t threadNum = 16;
         if(dim == 1){
-            tbb::parallel_for(tbb::blocked_range<size_t>(0, threadNum), [&](size_t i){
+            tbb::parallel_for((size_t)0, threadNum, (size_t)1,   [&](size_t i){
                 size_t bound = std::min(grid_size_cur / threadNum * (i + 1), grid_size_cur);
                 for (size_t j = grid_size_cur / threadNum * i; j < bound; j++){
                     v(j) = pow(grid_size_cur, 2) * (2 * v0(j) - (j == 0 ? 0 : v0(j - 1)) - (j == grid_size_cur - 1 ? 0 : v0(j + 1)));
@@ -191,7 +191,7 @@ public: // ctor & dtor
             });
         }
         else if(dim == 2){
-            tbb::parallel_for(tbb::blocked_range<size_t>(0, threadNum), [&](size_t i){
+            tbb::parallel_for((size_t)0, threadNum, (size_t)1,   [&](size_t i){
                 size_t bound = std::min(grid_size_cur / threadNum * (i + 1), grid_size_cur);
                 for (size_t row = 0; row < bound; row++)
                 {
@@ -228,7 +228,7 @@ public: // ctor & dtor
             auto f_new = (*rst_opt)(f - Av(v, grid_size_cur), grid_size_cur);
             Eigen::MatrixXd v_new = Eigen::MatrixXd::Zero(grid_size_cur >> 1, 1);
             VCycle(v_new, f_new, nu1, nu2, grid_size_cur >> 1);
-            v += (*itp_opt)(v_new, grid_size_cur);
+            v += (*itp_opt)(v_new, grid_size_cur >> 1);
         }
         for (int i = 0; i < nu2; i++)
         {
@@ -259,7 +259,6 @@ private:                                 // data
     InterpolationOperator<dim> *itp_opt = nullptr; // interpolation
     SolverType                  solver_type; 
     size_t                      coarest = 4;
-    std::vector<Eigen::MatrixXd>As;
     size_t                      max_iteration;
     double                      rel_accuracy;
 
