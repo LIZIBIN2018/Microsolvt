@@ -72,9 +72,10 @@ public: // ctor & dtor
         Eigen::MatrixXd vh = Eigen::MatrixXd::Zero(grid.grid_size, 1);
         Eigen::MatrixXd fh = Eigen::MatrixXd::Zero(grid.grid_size, 1);
         fh.resize(grid.grid_size, 1);
+        
         for (int i = 0; i < grid.grid_size; i++)
         {
-            fh(i) = f((i + 1) * grid.grid_length) * grid.grid_length * grid.grid_length;
+            fh(i) = f((i + 1) * grid.grid_length);
         }
 
         for (size_t iter = 0; iter < max_iteration; iter++)
@@ -144,18 +145,22 @@ public: // ctor & dtor
         Eigen::MatrixXd v0 = v;
         const size_t threadNum = 16;
         const double omega = 2.0 / 3;
+
+
+
+        //TODO parallel for有大问题
         if(dim == 1){
             tbb::parallel_for((size_t)0, threadNum, (size_t)1,   [&](size_t i){
-                size_t bound = std::min(grid_size_cur / threadNum * (i + 1), grid_size_cur);
+                size_t bound = std::min((grid_size_cur / threadNum + 1)* (i + 1), grid_size_cur);
                 for (size_t j = grid_size_cur / threadNum * i; j < bound; j++){
                     v(j) = v0(j) - omega * 0.5 * (2 * v0(j) - (j == 0 ? 0 : v0(j - 1)) - (j == grid_size_cur - 1 ? 0 : v0(j + 1)))
-                            + omega * 2 * (grid_size_cur + 1) * (grid_size_cur + 1) * f(j);
+                            + omega / 2 / ((grid_size_cur + 1) * (grid_size_cur + 1)) * f(j);  //TOCHECK 
                 }
             });
         }
         else if(dim == 2){
             tbb::parallel_for((size_t)0, threadNum, (size_t)1,   [&](size_t i){
-                size_t bound = std::min(grid_size_cur / threadNum * (i + 1), grid_size_cur);
+                size_t bound = std::min((grid_size_cur / threadNum + 1)* (i + 1), grid_size_cur);
                 for (size_t row = 0; row < bound; row++)
                 {
                     for (size_t col = 0; col < grid_size_cur; col++)
@@ -167,7 +172,7 @@ public: // ctor & dtor
                                     - (col == 0                 || row == grid_size_cur - 1 ? 0 : v0(place2index(row + 1, col - 1, grid_size_cur))) 
                                     - (col == grid_size_cur - 1 || row == 0                 ? 0 : v0(place2index(row - 1, col + 1, grid_size_cur))) 
                                     - (col == grid_size_cur - 1 || row == grid_size_cur - 1 ? 0 : v0(place2index(row + 1, col + 1, grid_size_cur))))
-                                + omega * 4 * (grid_size_cur + 1) * (grid_size_cur + 1) * f(idx);
+                                + omega / 4 / ((grid_size_cur + 1) * (grid_size_cur + 1)) * f(idx); //TOCHECK
                     }
                 }
             });
@@ -182,7 +187,7 @@ public: // ctor & dtor
         const size_t threadNum = 16;
         if(dim == 1){
             tbb::parallel_for((size_t)0, threadNum, (size_t)1, [&](size_t i){
-                size_t bound = std::min(grid_size / threadNum * (i + 1), grid_size);
+                size_t bound = std::min((grid_size / threadNum + 1) * (i + 1), grid_size);
                 for (size_t j = grid_size / threadNum * i; j < bound; j++){
                     r(j) = f(j) - pow(grid_size, 2) * (2 * v(j) - (j == 0 ? 0 : v(j - 1)) - (j == grid_size - 1 ? 0 : v(j + 1)));
                 }
@@ -190,7 +195,7 @@ public: // ctor & dtor
         }
         else if(dim == 2){
             tbb::parallel_for((size_t)0, threadNum, (size_t)1, [&](size_t i){
-                size_t bound = std::min(grid_size / threadNum * (i + 1), grid_size);
+                size_t bound = std::min((grid_size / threadNum + 1) * (i + 1), grid_size);
                 for (size_t row = 0; row < bound; row++)
                 {
                     for (size_t col = 0; col < grid_size; col++)

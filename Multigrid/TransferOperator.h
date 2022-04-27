@@ -20,7 +20,7 @@ public:
         if(dim == 1){
             rst.resize(halfLength, 1);
             tbb::parallel_for((size_t)0, threadNum, (size_t)1,   [&](size_t i){
-                size_t bound = std::min(halfLength / threadNum * (i + 1), halfLength);
+                size_t bound = std::min((halfLength / threadNum + 1) * (i + 1), halfLength);
                 for (size_t j = rst.size() / threadNum * i; j < bound; j++){
                     rst(j, 0) = restrict1D(v, j << 1 | 1);
                 }
@@ -29,7 +29,7 @@ public:
         else if(dim == 2){
             rst.resize(halfLength * halfLength, 1);
             tbb::parallel_for((size_t)0, threadNum, (size_t)1,   [&](size_t i){
-                size_t bound = std::min(halfLength / threadNum * (i + 1), halfLength);
+                size_t bound = std::min((halfLength / threadNum + 1) * (i + 1), halfLength);
                 for (size_t row = 0; row < bound; row++)
                 {
                     for (size_t col = 0; col < halfLength; col++)
@@ -62,7 +62,7 @@ public:
         if(dim == 1){
             itp.resize(doubleLength, 1);
             tbb::parallel_for((size_t)0, threadNum, (size_t)1,   [&](size_t i){
-                size_t bound = std::min(doubleLength / threadNum * (i + 1), doubleLength);
+                size_t bound = std::min((doubleLength / threadNum + 1) * (i + 1), doubleLength);
                 for (size_t j = doubleLength / threadNum * i; j < bound; j++){
                     itp(j) = interpolate1D(j == 0 ? 0 : v((j - 1) >> 1), j == doubleLength - 1 ? 0 : v(j >> 1, 0));
                 }
@@ -71,7 +71,7 @@ public:
         else if(dim == 2){
             itp.resize(doubleLength * doubleLength, 1);
             tbb::parallel_for((size_t)0, threadNum, (size_t)1,   [&](size_t i){
-                size_t bound = std::min(doubleLength / threadNum * (i + 1), doubleLength);
+                size_t bound = std::min((doubleLength / threadNum + 1) * (i + 1), doubleLength);
                 for (size_t row = 0; row < bound; row++)
                 {
                     for (size_t col = 0; col < doubleLength; col++)
