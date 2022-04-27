@@ -78,6 +78,7 @@ public: // ctor & dtor
             fh(i) = f((i + 1) * grid.grid_length);
         }
 
+        std::cout << max_iteration << std::endl;
         for (size_t iter = 0; iter < max_iteration; iter++)
         {
             if(solver_type == SolverType::VCycle)
@@ -95,9 +96,9 @@ public: // ctor & dtor
 
             // Calculate Relative Error
             Eigen::MatrixXd errorVector = getResidual(vh, fh, grid.grid_size);
-            double residue = maxNorm(errorVector);
-            double rel_error = residue / maxNorm(vh);
-            std::cout << "Iteration " << iter << ":    AbsError = " << residue << ", RelError = " << rel_error << std::endl;
+            double residual = maxNorm(errorVector);
+            double rel_error = residual / maxNorm(vh);
+            std::cout << "Iteration " << iter << ":    AbsError = " << residual << ", RelError = " << rel_error << std::endl;
             if(rel_error < rel_accuracy)
                 break;
         }
@@ -225,7 +226,6 @@ public: // ctor & dtor
         for (int i = 0; i < nu1; i++)
         {
             Relax(v, f, grid_size_cur);
-            // std::cout << "Size = " << grid_size_cur << "Residue = " << getResidue(v, f, grid_size_cur) << std::endl;
         }
 
             // std::cout << grid_size_cur << std::endl;
@@ -250,7 +250,7 @@ public: // ctor & dtor
         {
             auto f_new = (*rst_opt)(f, grid_size_cur);
             FullMultigridVCycle(v, f_new, nu0, grid_size_cur >> 1);
-            v = (*itp_opt)(v, grid_size_cur);
+            v = (*itp_opt)(v, grid_size_cur >> 1);
         }
         else
         {
@@ -266,7 +266,7 @@ private: // data
     RestrictionOperator<dim>   *rst_opt = nullptr;   // restriction
     InterpolationOperator<dim> *itp_opt = nullptr;   // interpolation
     SolverType                  solver_type; 
-    size_t                      coarest = 8;
+    size_t                      coarest = 2;
     size_t                      max_iteration;
     double                      rel_accuracy;
 

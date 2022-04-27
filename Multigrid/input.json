@@ -1,14 +1,13 @@
 {
-    "grid_n": 128,
+    "grid_n": 8192,
     "bdry_type": "Neumann",
     "restriction_operator": "injection",
     "interpolation_operator": "linear",
-    "cycle": "V-cycle",
-    "maximum_iteration": 10,
+    "cycle": "FullMultigridVCycle",
     "epsilon" : 10e-10,
     "initial_guess": 1,
     "func_idx": 2,
-    "max_iteration": 5,
+    "max_iteration": 2,
     "rel_accuracy": 1e-16,
     "output_path": "/Multigrid/result.txt"
 }
