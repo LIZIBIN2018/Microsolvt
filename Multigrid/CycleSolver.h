@@ -3,6 +3,7 @@
 #include <functional>
 #include "Multigrid.h"
 #include <utility>
+#include <vector>
 enum class SolverType
 {
     VCycle,
@@ -153,7 +154,7 @@ public: // ctor & dtor
         }
         else if (dim == 2)
         {
-                
+
         }
     }
     
@@ -193,6 +194,8 @@ private:                                 // data
     InterpolationOperator<dim> *itp_opt = nullptr; // interpolation
     SolverType                  solver_type; 
     size_t                      coarest = 4;
+    std::vector<Eigen::MatrixXd>As; 
+
 
 private: // TOOLS
     std::pair<int,int> index2place(int index, double grid_length) 
