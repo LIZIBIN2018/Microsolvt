@@ -94,7 +94,7 @@ public: // ctor & dtor
             }
 
             // Calculate Relative Error
-            Eigen::MatrixXd errorVector = getResidue(vh, fh, grid.grid_size);
+            Eigen::MatrixXd errorVector = getResidual(vh, fh, grid.grid_size);
             double residue = maxNorm(errorVector);
             double rel_error = residue / maxNorm(vh);
             std::cout << "Iteration " << iter << ":    AbsError = " << residue << ", RelError = " << rel_error << std::endl;
@@ -132,7 +132,7 @@ public: // ctor & dtor
             } 
 
             // Calculate Relative Error
-            Eigen::MatrixXd errorVector = getResidue(vh, fh, grid.grid_size);
+            Eigen::MatrixXd errorVector = getResidual(vh, fh, grid.grid_size);
             double max_norm = maxNorm(errorVector);
             double rel_error = max_norm / maxNorm(vh);
             std::cout << "Iteration " << iter << ":    Error = " << rel_error << std::endl;
@@ -182,7 +182,7 @@ public: // ctor & dtor
         }
     }
 
-    Eigen::MatrixXd getResidue(Eigen::MatrixXd &v, Eigen::MatrixXd &f, size_t grid_size){
+    Eigen::MatrixXd getResidual(Eigen::MatrixXd &v, Eigen::MatrixXd &f, size_t grid_size){
         Eigen::MatrixXd r = v;
         const size_t threadNum = 16;
         if(dim == 1){
@@ -231,7 +231,7 @@ public: // ctor & dtor
             // std::cout << grid_size_cur << std::endl;
         if (grid_size_cur + 1 > coarest)
         {
-            auto f_new = (*rst_opt)(getResidue(v, f, grid_size_cur), grid_size_cur);
+            auto f_new = (*rst_opt)(getResidual(v, f, grid_size_cur), grid_size_cur);
             // std::cout << f(0) << ',' << f_new(0) << std::endl;
             Eigen::MatrixXd v_new = Eigen::MatrixXd::Zero(grid_size_cur >> 1, 1);
             VCycle(v_new, f_new, nu1, nu2, grid_size_cur >> 1);
@@ -266,7 +266,7 @@ private: // data
     RestrictionOperator<dim>   *rst_opt = nullptr;   // restriction
     InterpolationOperator<dim> *itp_opt = nullptr;   // interpolation
     SolverType                  solver_type; 
-    size_t                      coarest = 2;
+    size_t                      coarest = 8;
     size_t                      max_iteration;
     double                      rel_accuracy;
 
