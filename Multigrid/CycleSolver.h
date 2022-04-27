@@ -2,7 +2,7 @@
 #include "TransferOperator.h"
 #include <functional>
 #include "Multigrid.h"
-
+#include <utility>
 enum class SolverType
 {
     VCycle,
@@ -69,7 +69,7 @@ public: // ctor & dtor
         // TODO 并行
         for(int i = 0;i < grid.grid_size;i++)
         {
-            fh(i) = f(i*grid.grid_length)*grid.grid_length*grid.grid_length;
+            fh(i) = f((i+1)*grid.grid_length)*grid.grid_length*grid.grid_length;
         }
         if(solver_type == SolverType::VCycle)
         {
@@ -79,7 +79,7 @@ public: // ctor & dtor
         {
             vh = FullMultigridVCycle(); //TODO
         }
-        for(int i = 0; i < grid_size; i++) //TOCHECK +-1
+        for(int i = 0; i < grid_size; i++) 
         {
             grid.data(i) = vh(i);
         } 
@@ -90,7 +90,27 @@ public: // ctor & dtor
         Eigen::MatrixXd vh = Eigen::MatrixXd::Zero(grid.grid_size*grid.grid_size,1);
         Eigen::MatrixXd fh = Eigen::MatrixXd;
         fh.resize(grid.grid_size*grid.grid_size,1);
-        // TODO dim==2的情况是如何？
+        // TODO 并行
+        for(int i = 0; i < grid.grid_size; i++)
+        {
+            for(int j = 0;j < grid.grid_size; j++)
+            {
+                int index = place2index(i,j);
+                fh(index) = f((i+1)*grid.grid_length, (j+1)*grid.grid_length);
+            }
+        }
+        if(solver_type == SolverType::VCycle)
+        {
+            vh = VCycle(vh, f, 3, 3, grid.grid_size); //nu1 ,nu2 = ? TODO
+        }
+        else if(solver_type == SolverType::FullMultigridVCycle)
+        {
+            vh = FullMultigridVCycle(vh,fh,3,grid.grid_size); //TODO
+        }
+        for(int i = 0; i < grid_size*grid_size; i++) 
+        {
+            grid.data(i) = vh(i);
+        } 
     }
 
     // TODO 既然传引用，那么还要返回么？
@@ -112,14 +132,14 @@ public: // ctor & dtor
         // 对方程A^h u^h = f^h 迭代nu1次
         for(int i = 0;i<nu1;i++)
         {
-            v = Rw*v + f;
+            v = Rw*v + wD_inv*f;
         }
         if(grid_size_cur + 1 > coarest)
         {
             auto f_new = (*rst_opt)(f - A*v, grid_size_cur);
             auto v_new = Eigen::MatrixXd::zero((grid_size_cur+1)/2 -1, 1);
-            v_new = VCycle(v_new, f_new, nu1, nu2, (grid_size_cur+1)/2 -1);
-            v += (*itp_opt)(v_new, grid_size_cur);
+            v_new      = VCycle(v_new, f_new, nu1, nu2, (grid_size_cur+1)/2 -1);
+            v         += (*itp_opt)(v_new, grid_size_cur);
         }
         for(int i = 0; i<nu2; i++)
         {
@@ -163,4 +183,16 @@ private:                                 // data
     InterpolationOperator<dim> *itp_opt = nullptr; // interpolation
     SolverType                  solver_type; 
     size_t                      coarest = 4;
+
+private: // TOOLS
+    std::pair<int,int> index2place(int index, double grid_length) 
+    { //TODO
+        int n = round(1.0/grid_length);
+        return std::pair<int, int>{index%};
+    }
+    int place2index(int i,int j)
+    {//TODO
+        return 0;
+    }
+
 };
