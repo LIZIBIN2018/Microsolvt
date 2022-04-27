@@ -96,17 +96,17 @@ public: // ctor & dtor
         {
             for(int j = 0;j < grid.grid_size; j++)
             {
-                int index = place2index(i,j);
+                int index = place2index(i,j,grid.grid_size);
                 fh(index) = f((i+1)*grid.grid_length, (j+1)*grid.grid_length);
             }
         }
         if(solver_type == SolverType::VCycle)
         {
-            vh = VCycle(vh, f, 3, 3, grid.grid_size); //nu1 ,nu2 = ? TODO
+            vh = VCycle(vh, f, 3, 3, grid.grid_size, 0); //nu1 ,nu2 = ? TODO
         }
         else if(solver_type == SolverType::FullMultigridVCycle)
         {
-            vh = FullMultigridVCycle(vh,fh,3,grid.grid_size); 
+            vh = FullMultigridVCycle(vh,fh,3,grid.grid_size, 0); 
         }
         for(int i = 0; i < grid_size*grid_size; i++) 
         {
@@ -114,26 +114,31 @@ public: // ctor & dtor
         } 
     }
 
-    Eigen::MatrixXd VCycle(Eigen::MatrixXd &v, Eigen::MatrixXd &f, size_t nu1, size_t nv2, size_t grid_size_cur)
+    Eigen::MatrixXd VCycle(Eigen::MatrixXd &v, Eigen::MatrixXd &f, size_t nu1, size_t nv2, size_t grid_size_cur, size_t layer)
     {
         ////迭代法：v=Rw v + wD^-1f
         // 迭代矩阵装配 TODO
-        Eigen::MatrixXd A; //[-1 2 -1]/hh
-
+        Eigen::MatrixXd *A; //[-1 2 -1]/hh
         // A finished
-        A = 2*Eigen::MatrixXd::Identity(grid_size_cur, grid_size_cur);
-        for(int i = 0;i < grid_size_cur - 1;i++)
+        if(As.size()<=layer)
         {
-            A(i,i+1) = 1;
-            A(i+1,i) = 1;
+            Eigen::MatrixXd A_layer;
+            A_layer = 2 * Eigen::MatrixXd::Identity(grid_size_cur, grid_size_cur);
+            for (int i = 0; i < grid_size_cur - 1; i++)
+            {
+                A_layer(i, i + 1) = 1;
+                A_layer(i + 1, i) = 1;
+            }
+            A_layer = A_layer * pow(grid_size_cur + 1, 2);
+            As.push_back(A_layer);
         }
-        A = A*pow(grid_size_cur+1,2);
+        A = &As[layer];
 
         if (dim == 1)
         {
             Eigen::MatrixXd Rw;
             double wD_inv;
-            Rw = Eigen::MatrixXd::Identity(grid_size_cur, grid_size_cur) - A / pow(grid_size_cur, 2);
+            Rw = Eigen::MatrixXd::Identity(grid_size_cur, grid_size_cur) - (*A) / pow(grid_size_cur, 2);
             wD_inv = wD_inv = 1 / (3 * pow(1 + grid_size_cur, 2));
             // 对方程A^h u^h = f^h 迭代nu1次
             for (int i = 0; i < nu1; i++)
@@ -142,9 +147,9 @@ public: // ctor & dtor
             }
             if (grid_size_cur + 1 > coarest)
             {
-                auto f_new = (*rst_opt)(f - A * v, grid_size_cur);
+                auto f_new = (*rst_opt)(f - (*A) * v, grid_size_cur);
                 auto v_new = Eigen::MatrixXd::zero((grid_size_cur + 1) / 2 - 1, 1);
-                v_new = VCycle(v_new, f_new, nu1, nu2, (grid_size_cur + 1) / 2 - 1);
+                v_new = VCycle(v_new, f_new, nu1, nu2, (grid_size_cur + 1) / 2 - 1, layer+1);
                 v += (*itp_opt)(v_new, grid_size_cur);
             }
             for (int i = 0; i < nu2; i++)
@@ -158,7 +163,7 @@ public: // ctor & dtor
         }
     }
     
-    Eigen::MatrixXd FullMultigridVCycle(Eigen::MatrixXd &v, Eigen::MatrixXd &f, size_t nu0, size_t grid_size_cur)
+    Eigen::MatrixXd FullMultigridVCycle(Eigen::MatrixXd &v, Eigen::MatrixXd &f, size_t nu0, size_t grid_size_cur, size_t layer)
     {
         Eigen::MatrixXd Rw;
         Eigen::MatrixXd wD_inv;
@@ -172,19 +177,19 @@ public: // ctor & dtor
 
         }
 
-        if(grid_size_cur + 1> coarest) 
+        if(grid_size_cur + 1 > coarest) 
         {
             auto f_new = (*rst_opt)(f, grid_size_cur);
-            auto v_new = FullMultigridVCycle(f_new, nu0, (grid_size_cur+1)/2 - 1);
+            auto v_new = FullMultigridVCycle(f_new, nu0, (grid_size_cur+1)/2 - 1, layer+1);
             auto v = (*itp_opt)(v, grid_size_cur);
         }
         else
         {
             v = Eigen::MatrixXd::Zero(v.rows(), 1);
         }
-        for(int i = 0; i<v0; i++)
+        for(int i = 0; i<nu0; i++)
         {
-            v = Rw*v + wD_inv*f;
+            v = VCycle(v,f,3,3,grid_size_cur,layer);
         }
         return v;
     }
@@ -203,9 +208,9 @@ private: // TOOLS
         int n = round(1.0/grid_length);
         return std::pair<int, int>{index%};
     }
-    int place2index(int i,int j)
+    int place2index(int i,int j,size_t grid_size)
     {//TODO
-        return 0;
+        return i*grid_size + j;
     }
 
 };
