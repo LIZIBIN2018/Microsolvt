@@ -1,9 +1,0 @@
--nan -nan -nan -nan -nan -nan -nan -nan -nan 
--nan -nan -nan -nan -nan -nan -nan -nan -nan 
--nan -nan -nan * * * -nan -nan -nan 
--nan -nan * * * * * -nan -nan 
--nan -nan * * * * * -nan -nan 
--nan -nan * * * * * -nan -nan 
--nan -nan -nan * * * -nan -nan -nan 
--nan -nan -nan -nan -nan -nan -nan -nan -nan 
--nan -nan -nan -nan -inf 186789982175809.97 186789982175810.31 186789982175810.5 186789982175810.62 
