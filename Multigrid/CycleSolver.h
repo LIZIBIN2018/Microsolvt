@@ -4,6 +4,7 @@
 #include "Multigrid.h"
 #include <utility>
 #include <vector>
+
 enum class SolverType
 {
     VCycle,
@@ -54,6 +55,13 @@ public: // ctor & dtor
             exit(1);
         }
 
+        max_iteration = root["max_iteration"].asint();
+        if(max_iteration <= 0)
+            throw std::exception("Invalid max_iteration");
+
+        rel_accuracy = root["rel_accuracy"].asDouble();
+        if(rel_accuracy <= 0)
+            throw std::exception("Invalid rel_accuracy");
     }
     virtual ~CycleSolver() { 
         if(rst_opt) delete rst_opt; 
@@ -67,23 +75,32 @@ public: // ctor & dtor
         Eigen::MatrixXd vh = Eigen::MatrixXd::Zero(grid.grid_size,1);
         Eigen::MatrixXd fh = Eigen::MatrixXd;
         fh.resize(grid.grid_size,1);
-        // TODO 并行
-        for(int i = 0;i < grid.grid_size;i++)
+        for (size_t iter = 0; iter < max_iteration; iter++)
         {
-            fh(i) = f((i+1)*grid.grid_length)*grid.grid_length*grid.grid_length;
+            // TODO 并行
+            for(int i = 0;i < grid.grid_size;i++)
+            {
+                fh(i) = f((i+1)*grid.grid_length)*grid.grid_length*grid.grid_length;
+            }
+            if(solver_type == SolverType::VCycle)
+            {
+                vh = VCycle(vh, f, 3, 3, grid.grid_size,0); //nu1 ,nu2 = ? TODO
+            }
+            else if(solver_type == SolverType::FullMultigridVCycle)
+            {
+                vh = FullMultigridVCycle(vh,f,0,grid.grid_size, 0); //TODO
+            }
+            for(int i = 0; i < grid_size; i++) 
+            {
+                grid.data(i) = vh(i);
+            } 
+
+            // Calculate Relative Error
+            double max_norm = (vh - As[0] * fh).maxCoeff();
+            std::cout << "Iteration " << iter << ":    Error = " << max_norm << std::endl;
+            if(max_norm / vh.maxCoeff() < rel_accuracy)
+                break;
         }
-        if(solver_type == SolverType::VCycle)
-        {
-            vh = VCycle(vh, f, 3, 3, grid.grid_size); //nu1 ,nu2 = ? TODO
-        }
-        else if(solver_type == SolverType::FullMultigridVCycle)
-        {
-            vh = FullMultigridVCycle(); //TODO
-        }
-        for(int i = 0; i < grid_size; i++) 
-        {
-            grid.data(i) = vh(i);
-        } 
     }
 
     virtual void solve(const Multigrid<dim> &grid,std::function<double(double, double)> f)
@@ -91,30 +108,40 @@ public: // ctor & dtor
         Eigen::MatrixXd vh = Eigen::MatrixXd::Zero(grid.grid_size*grid.grid_size,1);
         Eigen::MatrixXd fh = Eigen::MatrixXd;
         fh.resize(grid.grid_size*grid.grid_size,1);
-        // TODO 并行
-        for(int i = 0; i < grid.grid_size; i++)
+        for (size_t iter = 0; iter < max_iteration; iter++)
         {
-            for(int j = 0;j < grid.grid_size; j++)
+            // TODO 并行
+            for(int i = 0; i < grid.grid_size; i++)
             {
-                int index = place2index(i,j,grid.grid_size);
-                fh(index) = f((i+1)*grid.grid_length, (j+1)*grid.grid_length);
+                for(int j = 0;j < grid.grid_size; j++)
+                {
+                    int index = place2index(i,j,grid.grid_size);
+                    fh(index) = f((i+1)*grid.grid_length, (j+1)*grid.grid_length);
+                }
             }
+            if(solver_type == SolverType::VCycle)
+            {
+                vh = VCycle(vh, f, 3, 3, grid.grid_size,0); //nu1 ,nu2 = ? TODO
+            }
+            else if(solver_type == SolverType::FullMultigridVCycle)
+            {
+                vh = FullMultigridVCycle(vh,fh,3,grid.grid_size,0); 
+            }
+            for(int i = 0; i < grid_size*grid_size; i++) 
+            {
+                grid.data(i) = vh(i);
+            } 
+
+            // Calculate Relative Error
+            double max_norm = (vh - As[0] * fh).maxCoeff();
+            std::cout << "Iteration " << iter << ":    Error = " << max_norm << std::endl;
+            if(max_norm / vh.maxCoeff() < rel_accuracy)
+                break;
         }
-        if(solver_type == SolverType::VCycle)
-        {
-            vh = VCycle(vh, f, 3, 3, grid.grid_size, 0); //nu1 ,nu2 = ? TODO
-        }
-        else if(solver_type == SolverType::FullMultigridVCycle)
-        {
-            vh = FullMultigridVCycle(vh,fh,3,grid.grid_size, 0); 
-        }
-        for(int i = 0; i < grid_size*grid_size; i++) 
-        {
-            grid.data(i) = vh(i);
-        } 
     }
 
-    Eigen::MatrixXd VCycle(Eigen::MatrixXd &v, Eigen::MatrixXd &f, size_t nu1, size_t nv2, size_t grid_size_cur, size_t layer)
+    // TODO 既然传引用，那么还要返回么？
+    Eigen::MatrixXd VCycle(Eigen::MatrixXd &v, Eigen::MatrixXd &f, size_t nu1, size_t nv2, size_t grid_size_cur)
     {
         ////迭代法：v=Rw v + wD^-1f
         // 迭代矩阵装配 TODO
@@ -199,7 +226,9 @@ private:                                 // data
     InterpolationOperator<dim> *itp_opt = nullptr; // interpolation
     SolverType                  solver_type; 
     size_t                      coarest = 4;
-    std::vector<Eigen::MatrixXd>As; 
+    std::vector<Eigen::MatrixXd>As;
+    size_t                      max_iteration;
+    double                      rel_accuracy;
 
 
 private: // TOOLS
