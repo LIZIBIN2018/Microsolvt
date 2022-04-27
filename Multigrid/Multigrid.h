@@ -13,7 +13,7 @@
 template <int dim>
 class Multigrid
 {
-private:
+public:
     Eigen::MatrixXd      data;
     GridBdryType         bdryType;
     double               grid_length;     // h
@@ -31,8 +31,6 @@ public:
 
     void grid_initialization();
     void grid_output(std::string path);
-
-private: //TOOLS
 };
 
 
@@ -59,10 +57,11 @@ Multigrid<dim>::Multigrid(const Json::Value &root)
         exit(1);
     }
 
-
     // 生成网格
-    data.resize(grid_size,grid_size); //TOCHECK
-
+    if(dim == 1)
+        data.resize(grid_size,1); //TOCHECK
+    if(dim == 2)
+        data.resize(grid_size,grid_size); //TOCHECK
 }
 
 template <int dim>
