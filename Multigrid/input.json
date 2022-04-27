@@ -1,5 +1,5 @@
 {
-    "grid_h": 0.0675,
+    "grid_n": 32,
     "bdry_type": "Neumann",
     "restriction_operator": "injection",
     "interpolation_operator": "linear",
