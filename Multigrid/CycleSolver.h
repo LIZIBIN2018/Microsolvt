@@ -5,7 +5,7 @@
 #include <utility>
 #include <vector>
 #include <eigen3/Eigen/Eigen>
-#include <tbb/tbb.h>
+
 
 enum class SolverType
 {
@@ -78,7 +78,7 @@ public: // ctor & dtor
             fh(i) = f((i + 1) * grid.grid_length);
         }
 
-        std::cout << max_iteration << std::endl;
+        // std::cout << max_iteration << std::endl;
         for (size_t iter = 0; iter < max_iteration; iter++)
         {
             if(solver_type == SolverType::VCycle)
@@ -144,39 +144,30 @@ public: // ctor & dtor
 
     void Relax(Eigen::MatrixXd &v, Eigen::MatrixXd &f, size_t grid_size_cur){
         Eigen::MatrixXd v0 = v;
-        const size_t threadNum = 16;
+        
         const double omega = 2.0 / 3;
-
-
-
-        //TODO parallel for有大问题
+        
         if(dim == 1){
-            tbb::parallel_for((size_t)0, threadNum, (size_t)1,   [&](size_t i){
-                size_t bound = std::min((grid_size_cur / threadNum + 1)* (i + 1), grid_size_cur);
-                for (size_t j = grid_size_cur / threadNum * i; j < bound; j++){
-                    v(j) = v0(j) - omega * 0.5 * (2 * v0(j) - (j == 0 ? 0 : v0(j - 1)) - (j == grid_size_cur - 1 ? 0 : v0(j + 1)))
-                            + omega / 2 / ((grid_size_cur + 1) * (grid_size_cur + 1)) * f(j);  //TOCHECK 
-                }
-            });
+            for (size_t j = 0; j < grid_size_cur; j++){
+                v(j) = v0(j) - omega * 0.5 * (2 * v0(j) - (j == 0 ? 0 : v0(j - 1)) - (j == grid_size_cur - 1 ? 0 : v0(j + 1)))
+                    + omega / 2 / ((grid_size_cur + 1) * (grid_size_cur + 1)) * f(j);  //TOCHECK 
+            }
         }
         else if(dim == 2){
-            tbb::parallel_for((size_t)0, threadNum, (size_t)1,   [&](size_t i){
-                size_t bound = std::min((grid_size_cur / threadNum + 1)* (i + 1), grid_size_cur);
-                for (size_t row = 0; row < bound; row++)
+            for (size_t row = 0; row < grid_size_cur; row++)
+            {
+                for (size_t col = 0; col < grid_size_cur; col++)
                 {
-                    for (size_t col = 0; col < grid_size_cur; col++)
-                    {
-                        size_t idx = row * grid_size_cur + col;
-                        v(idx) = v0(idx) 
-                                - omega * 0.25 * (4 * v0(idx) 
-                                    - (col == 0                 || row == 0                 ? 0 : v0(place2index(row - 1, col - 1, grid_size_cur))) 
-                                    - (col == 0                 || row == grid_size_cur - 1 ? 0 : v0(place2index(row + 1, col - 1, grid_size_cur))) 
-                                    - (col == grid_size_cur - 1 || row == 0                 ? 0 : v0(place2index(row - 1, col + 1, grid_size_cur))) 
-                                    - (col == grid_size_cur - 1 || row == grid_size_cur - 1 ? 0 : v0(place2index(row + 1, col + 1, grid_size_cur))))
-                                + omega / 4 / ((grid_size_cur + 1) * (grid_size_cur + 1)) * f(idx); //TOCHECK
-                    }
+                    size_t idx = row * grid_size_cur + col;
+                    v(idx) = v0(idx) 
+                            - omega * 0.25 * (4 * v0(idx) 
+                                - (col == 0                 || row == 0                 ? 0 : v0(place2index(row - 1, col - 1, grid_size_cur))) 
+                                - (col == 0                 || row == grid_size_cur - 1 ? 0 : v0(place2index(row + 1, col - 1, grid_size_cur))) 
+                                - (col == grid_size_cur - 1 || row == 0                 ? 0 : v0(place2index(row - 1, col + 1, grid_size_cur))) 
+                                - (col == grid_size_cur - 1 || row == grid_size_cur - 1 ? 0 : v0(place2index(row + 1, col + 1, grid_size_cur))))
+                            + omega / 4 / ((grid_size_cur + 1) * (grid_size_cur + 1)) * f(idx); //TOCHECK
                 }
-            });
+            }
         }
         else{
             throw "Invalid dim";
@@ -185,31 +176,25 @@ public: // ctor & dtor
 
     Eigen::MatrixXd getResidual(Eigen::MatrixXd &v, Eigen::MatrixXd &f, size_t grid_size){
         Eigen::MatrixXd r = v;
-        const size_t threadNum = 16;
+        
         if(dim == 1){
-            tbb::parallel_for((size_t)0, threadNum, (size_t)1, [&](size_t i){
-                size_t bound = std::min((grid_size / threadNum + 1) * (i + 1), grid_size);
-                for (size_t j = grid_size / threadNum * i; j < bound; j++){
-                    r(j) = f(j) - pow(grid_size, 2) * (2 * v(j) - (j == 0 ? 0 : v(j - 1)) - (j == grid_size - 1 ? 0 : v(j + 1)));
-                }
-            });
+            for (size_t j = 0; j < grid_size; j++){
+                r(j) = f(j) - pow(grid_size, 2) * (2 * v(j) - (j == 0 ? 0 : v(j - 1)) - (j == grid_size - 1 ? 0 : v(j + 1)));
+            }
         }
         else if(dim == 2){
-            tbb::parallel_for((size_t)0, threadNum, (size_t)1, [&](size_t i){
-                size_t bound = std::min((grid_size / threadNum + 1) * (i + 1), grid_size);
-                for (size_t row = 0; row < bound; row++)
+            for (size_t row = 0; row < grid_size; row++)
+            {
+                for (size_t col = 0; col < grid_size; col++)
                 {
-                    for (size_t col = 0; col < grid_size; col++)
-                    {
-                        size_t idx = row * grid_size + col;
-                        r(idx) = f(idx) - pow(grid_size, 2) * (4 * v(idx) 
-                                    - (col == 0             || row == 0             ? 0 : v(place2index(row - 1, col - 1, grid_size))) 
-                                    - (col == 0             || row == grid_size - 1 ? 0 : v(place2index(row + 1, col - 1, grid_size))) 
-                                    - (col == grid_size - 1 || row == 0             ? 0 : v(place2index(row - 1, col + 1, grid_size))) 
-                                    - (col == grid_size - 1 || row == grid_size - 1 ? 0 : v(place2index(row + 1, col + 1, grid_size))));
-                    }
+                    size_t idx = row * grid_size + col;
+                    r(idx) = f(idx) - pow(grid_size, 2) * (4 * v(idx) 
+                                - (col == 0             || row == 0             ? 0 : v(place2index(row - 1, col - 1, grid_size))) 
+                                - (col == 0             || row == grid_size - 1 ? 0 : v(place2index(row + 1, col - 1, grid_size))) 
+                                - (col == grid_size - 1 || row == 0             ? 0 : v(place2index(row - 1, col + 1, grid_size))) 
+                                - (col == grid_size - 1 || row == grid_size - 1 ? 0 : v(place2index(row + 1, col + 1, grid_size))));
                 }
-            });
+            }
         }
         else{
             throw "Invalid dim";
@@ -219,7 +204,7 @@ public: // ctor & dtor
 
     void VCycle(Eigen::MatrixXd &v, Eigen::MatrixXd &f, size_t nu1, size_t nu2, size_t grid_size_cur)
     {
-        const size_t threadNum = 16;
+        
 
         // std::cout << "f = " << f << std::endl;
         // 对方程A^h u^h = f^h 迭代nu1次

@@ -1,8 +1,6 @@
 #pragma once 
 #include <iostream>
 #include <eigen3/Eigen/Dense>
-#include <tbb/tbb.h>
-
 
 // 1st layer 
 template<int dim>
@@ -15,29 +13,23 @@ public:
     Eigen::MatrixXd operator()(Eigen::MatrixXd v, size_t grid_num)
     {
         Eigen::MatrixXd rst;
-        const size_t threadNum = 16;
+        
         size_t halfLength = grid_num >> 1;
         if(dim == 1){
             rst.resize(halfLength, 1);
-            tbb::parallel_for((size_t)0, threadNum, (size_t)1,   [&](size_t i){
-                size_t bound = std::min((halfLength / threadNum + 1) * (i + 1), halfLength);
-                for (size_t j = rst.size() / threadNum * i; j < bound; j++){
-                    rst(j, 0) = restrict1D(v, j << 1 | 1);
-                }
-            });
+            for(size_t i = 0; i < halfLength; i++){
+                rst(i, 0) = restrict1D(v, i << 1 | 1);
+            }
         }
         else if(dim == 2){
             rst.resize(halfLength * halfLength, 1);
-            tbb::parallel_for((size_t)0, threadNum, (size_t)1,   [&](size_t i){
-                size_t bound = std::min((halfLength / threadNum + 1) * (i + 1), halfLength);
-                for (size_t row = 0; row < bound; row++)
+            for (size_t row = 0; row < halfLength; row++)
+            {
+                for (size_t col = 0; col < halfLength; col++)
                 {
-                    for (size_t col = 0; col < halfLength; col++)
-                    {
-                        rst(row * halfLength + col, 0) = restrict2D(v, (row << 1 | 1) * grid_num + (col << 1 | 1), grid_num);
-                    }
+                    rst(row * halfLength + col, 0) = restrict2D(v, (row << 1 | 1) * grid_num + (col << 1 | 1), grid_num);
                 }
-            });
+            }
         }
         else{
             throw "Invalid dim";
@@ -57,34 +49,28 @@ public:
     Eigen::MatrixXd operator()(Eigen::MatrixXd v, size_t grid_num)
     {
         Eigen::MatrixXd itp;
-        const size_t threadNum = 16;
+        
         size_t doubleLength = grid_num << 1 | 1;
         if(dim == 1){
             itp.resize(doubleLength, 1);
-            tbb::parallel_for((size_t)0, threadNum, (size_t)1,   [&](size_t i){
-                size_t bound = std::min((doubleLength / threadNum + 1) * (i + 1), doubleLength);
-                for (size_t j = doubleLength / threadNum * i; j < bound; j++){
-                    itp(j) = interpolate1D(j == 0 ? 0 : v((j - 1) >> 1), j == doubleLength - 1 ? 0 : v(j >> 1, 0));
-                }
-            });
+            for (size_t i = 0; i < doubleLength; i++){
+                itp(i) = interpolate1D(i == 0 ? 0 : v((i - 1) >> 1), i == doubleLength - 1 ? 0 : v(i >> 1, 0));
+            }
         }
         else if(dim == 2){
             itp.resize(doubleLength * doubleLength, 1);
-            tbb::parallel_for((size_t)0, threadNum, (size_t)1,   [&](size_t i){
-                size_t bound = std::min((doubleLength / threadNum + 1) * (i + 1), doubleLength);
-                for (size_t row = 0; row < bound; row++)
+            for (size_t row = 0; row < doubleLength; row++)
+            {
+                for (size_t col = 0; col < doubleLength; col++)
                 {
-                    for (size_t col = 0; col < doubleLength; col++)
-                    {
-                        itp(row * doubleLength + col) = interpolate2D(
-                            row == 0            || col == 0            ? 0 : v((row - 1) >> 1) * grid_num + ((col - 1) >> 1),
-                            row == 0            || col == grid_num - 1 ? 0 : v((row - 1) >> 1) * grid_num + ((col    ) >> 1),
-                            row == grid_num - 1 || col == 0            ? 0 : v((row    ) >> 1) * grid_num + ((col - 1) >> 1),
-                            row == grid_num - 1 || col == grid_num - 1 ? 0 : v((row    ) >> 1) * grid_num + ((col    ) >> 1)
-                        );
-                    }
+                    itp(row * doubleLength + col) = interpolate2D(
+                        row == 0            || col == 0            ? 0 : v((row - 1) >> 1) * grid_num + ((col - 1) >> 1),
+                        row == 0            || col == grid_num - 1 ? 0 : v((row - 1) >> 1) * grid_num + ((col    ) >> 1),
+                        row == grid_num - 1 || col == 0            ? 0 : v((row    ) >> 1) * grid_num + ((col - 1) >> 1),
+                        row == grid_num - 1 || col == grid_num - 1 ? 0 : v((row    ) >> 1) * grid_num + ((col    ) >> 1)
+                    );
                 }
-            });
+            }
         }
         else{
             throw "Invalid dim";
