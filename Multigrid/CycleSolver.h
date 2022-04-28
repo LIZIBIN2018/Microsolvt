@@ -148,8 +148,13 @@ private:
             Eigen::MatrixXd f2h = (*rst_opt)(newGetResidual(Ah,vh,fh), grid_size_cur);
             Eigen::MatrixXd v2h = Eigen::MatrixXd::Zero(pow(grid_size_cur >> 1,dim), 1);
             newVCycle(v2h, f2h, nu1, nu2, grid_size_cur >> 1);
-
+            
+            (*itp_opt)(v2h, grid_size_cur >> 1);
+            std::cout <<"插值后的大小" << (*itp_opt)(v2h, grid_size_cur >> 1).size() << std::endl;
+            std::cout <<"vh的大小" << vh.size() << std::endl;
+           
             vh += (*itp_opt)(v2h, grid_size_cur >> 1);
+            
         }
         for (int i = 0; i < nu2; i++)
         {

@@ -74,6 +74,14 @@ int run_test()
 
 int main()
 {
+    InterpolationOperator<2> *itp = new LinearInterpolationOperator<2>();
+    Eigen::MatrixXd mat(3*3,1);
+    for(int i = 0;i < 3; i++)
+        for(int j = 0;j < 3; j++)
+            mat(i*3+j) = i*3+j;
+    std::cout << mat << std::endl;
+    std::cout << (*itp)(mat,3) << std::endl;
+
     run_test();
 }
 

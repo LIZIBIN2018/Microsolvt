@@ -18,7 +18,7 @@ public:
         if(dim == 1){
             rst.resize(halfLength, 1);
             for(size_t i = 0; i < halfLength; i++){
-                rst(i, 0) = restrict1D(v, i << 1 | 1);  //*2+1
+                rst(i) = restrict1D(v, i << 1 | 1);  //*2+1
             }
         }
         else if(dim == 2){
@@ -66,12 +66,33 @@ public:
             {
                 for (size_t col = 0; col < doubleLength; col++)
                 {
-                    itp(row * doubleLength + col) = interpolate2D(
-                        row == 0            || col == 0            ? 0 : v((row - 1) >> 1) * grid_num + ((col - 1) >> 1),
-                        row == 0            || col == grid_num - 1 ? 0 : v((row - 1) >> 1) * grid_num + ((col    ) >> 1),
-                        row == grid_num - 1 || col == 0            ? 0 : v((row    ) >> 1) * grid_num + ((col - 1) >> 1),
-                        row == grid_num - 1 || col == grid_num - 1 ? 0 : v((row    ) >> 1) * grid_num + ((col    ) >> 1)
-                    );
+                    int index = row * doubleLength + col;
+                    double temp = 0;
+                    if(row % 2 == 1 && col % 2 == 1)
+                    {
+                        temp = v((row >> 1) * grid_num + (col >> 1));
+                    }
+                    else if(row % 2 == 0 && col % 2 == 1)
+                    {
+                        // row -> row>>1 - 1 , row>>1 + 1
+                        // col -> col>>1
+                        temp = interpolate1D(row==0?0:v(((row>>1)-1)*grid_num + col>>1), 
+                                                   row==doubleLength-1?0:v(((row>>1)+1)*grid_num + col>>1));
+                    }
+                    else if(row % 2 == 1 && col % 2 == 0)
+                    {
+                        temp = interpolate1D(col==0?0:v((row>>1)*grid_num + (col>>1) - 1), 
+                                                   col==doubleLength-1?0:v((row>>1)*grid_num + (col>>1) + 1));
+                    }
+                    else
+                    {
+                        temp = interpolate2D(
+                        row == 0            || col == 0            ? 0 : v(((row>>1) - 1) * grid_num + ((col >> 1) - 1)),
+                        row == 0            || col == doubleLength - 1 ? 0 : v(((row>>1) - 1) * grid_num + ((col >> 1) + 1)),
+                        row == doubleLength - 1 || col == 0            ? 0 : v(((row>>1) + 1) * grid_num + ((col >> 1) - 1)),
+                        row == doubleLength - 1 || col == doubleLength - 1 ? 0 : v(((row>>1) + 1) * grid_num + ((col >> 1) + 1)));
+                    }
+                    itp(index) = temp;
                 }
             }
         }
