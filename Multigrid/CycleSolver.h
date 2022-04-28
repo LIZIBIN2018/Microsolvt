@@ -19,36 +19,46 @@ class CycleSolver
 public: // ctor & dtor
     CycleSolver(Json::Value &root)
     {
-        auto rstOptStr = root["restriction_operator"].asString();
-        auto itpOptStr = root["interpolation_operator"].asString();
-        if (rstOptStr == "injection")
-            rst_opt = new InjectionOperator<dim>();
-        else if (rstOptStr == "fullWeighting")
-            rst_opt = new FullWeightOperator<dim>();
-        else
-            throw "Invalid transfer opetator";
-        if (itpOptStr == "linear")
-            itp_opt = new LinearInterpolationOperator<dim>();
-        else if (itpOptStr == "quadratic")
-            itp_opt = new QuadraticInterpolationOperator<dim>();
-        else
-            throw "Invalid transfer opetator";
+        try{
+            auto rstOptStr = root["restriction_operator"].asString();
+            auto itpOptStr = root["interpolation_operator"].asString();
+            if (rstOptStr == "injection")
+                rst_opt = new InjectionOperator<dim>();
+            else if (rstOptStr == "fullWeighting")
+                rst_opt = new FullWeightOperator<dim>();
+            else
+                throw "Invalid transfer opetator";
+            if (itpOptStr == "linear")
+                itp_opt = new LinearInterpolationOperator<dim>();
+            else if (itpOptStr == "quadratic")
+                itp_opt = new QuadraticInterpolationOperator<dim>();
+            else
+                throw "Invalid transfer opetator";
 
-        auto cycle_type = root["cycle"].asString();
-        if (cycle_type == "V-cycle")
-            solver_type = SolverType::VCycle;
-        else if (cycle_type == "FullMultigridVCycle")
-            solver_type = SolverType::FullMultigridVCycle;
-        else
-            throw "Invalid cycle type";
+            auto cycle_type = root["cycle"].asString();
+            if (cycle_type == "V-cycle")
+                solver_type = SolverType::VCycle;
+            else if (cycle_type == "FullMultigridVCycle")
+                solver_type = SolverType::FullMultigridVCycle;
+            else
+                throw "Invalid cycle type";
 
-        max_iteration = root["max_iteration"].asInt();
-        if(max_iteration <= 0)
-            throw "Invalid max_iteration";
+            max_iteration = root["max_iteration"].asInt();
+            if(max_iteration <= 0)
+                throw "Invalid max_iteration";
 
-        rel_accuracy = root["rel_accuracy"].asDouble();
-        if(rel_accuracy <= 0)
-            throw "Invalid rel_accuracy";
+            rel_accuracy = root["rel_accuracy"].asDouble();
+            if(rel_accuracy <= 0)
+                throw "Invalid rel_accuracy";
+
+            coarest = root["coarest"].asInt();
+            if(coarest <= 1 || coarest & (coarest - 1) != 0)
+                throw "Invalid parameter coarest";
+        }
+        catch(const char* s){
+            std::cerr << s << std::endl;
+            exit(1);
+        }
     }
     virtual ~CycleSolver() { 
         if(rst_opt) delete rst_opt; 
@@ -251,7 +261,7 @@ private: // data
     RestrictionOperator<dim>   *rst_opt = nullptr;   // restriction
     InterpolationOperator<dim> *itp_opt = nullptr;   // interpolation
     SolverType                  solver_type; 
-    size_t                      coarest = 2;
+    size_t                      coarest;
     size_t                      max_iteration;
     double                      rel_accuracy;
 

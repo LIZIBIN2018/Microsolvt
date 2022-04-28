@@ -49,21 +49,28 @@ void Multigrid<dim>::grid_output(std::string path)
 {
     std::ofstream f(path);
     f.precision(17);
-    if(dim == 1){
-        f << 0 << ' ';
-        for(int i = 0;i < grid_size; i++){
-            f << data(i) << ' ';
+    if (dim == 1)
+    {
+        f << 0 << std::endl;
+        for (int i = 0; i < grid_size; i++)
+        {
+            f << data(i) << std::endl;
         }
-        f<< 0 << ' ';
+        f << 0 << std::endl;
     }
-    if(dim == 2){
-        for(int i = 0;i<grid_size + 2;++i){
-            for(int j = 0;j<grid_size + 2;++j){
-                if(i == 0 || i == grid_size+1 || j == 0 || j == grid_size+1){
+    if (dim == 2)
+    {
+        for (int i = -1; i < grid_size + 1; ++i)
+        {
+            for (int j = -1; j < grid_size + 1; ++j)
+            {
+                if (i == -1 || i == grid_size || j == -1 || j == grid_size)
+                {
                     f << 0 << ' ';
                 }
-                else{
-                    f << data(j + grid_size*i) << ' ';
+                else
+                {
+                    f << data(j + grid_size * i) << ' ';
                 }
             }
             f << std::endl;

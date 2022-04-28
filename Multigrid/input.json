@@ -1,11 +1,12 @@
 {
-    "grid_n": 8192,
+    "grid_n": 1024,
     "bdry_type": "Neumann",
     "restriction_operator": "injection",
     "interpolation_operator": "linear",
     "cycle": "FullMultigridVCycle",
     "epsilon" : 10e-10,
     "initial_guess": 1,
+    "coarest": 8,
     "func_idx": 2,
     "max_iteration": 10,
     "rel_accuracy": 1e-16,
