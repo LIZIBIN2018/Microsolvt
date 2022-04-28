@@ -1,0 +1,11 @@
+{
+    "grid_n": 4,
+    "restriction_operator": "injection",
+    "interpolation_operator": "linear",
+    "cycle": "V-cycle",
+    "coarest": 2,
+    "func_idx": 2,
+    "max_iteration": 1000,
+    "rel_accuracy": 1e-16,
+    "output_path": "./Multigrid/"
+}
