@@ -125,7 +125,7 @@ int run_multigrid()
 
     // 网格求解
     generate_test_fun_1d(f1,df1); // TODO dim=2？
-    solver.solve(grid,f1);
+    solver.solve(grid,df1);
 
     std::string output_path;
     try{
@@ -187,9 +187,9 @@ void generate_test_fun(std::function<double(double,double)> testfuns[3],
 }
 
 void generate_test_fun_1d(std::function<double(double)> &testfuns,
-                          std::function<double(double)> &d_testfuns)
+                          std::function<double(double)> &neg_laplacian)
 {
     testfuns = [](double x){return exp(sin(x));};
-    d_testfuns = [](double x){return exp(sin(x))*cos(x);};
+    neg_laplacian = [](double x){return exp(sin(x))*(sin(x)-pow2(cos(x)));};
     //d_testfuns[1] = [](double x){return exp(sin(x)) * (cos(x) * cos(x) - sin(x));};
 }
