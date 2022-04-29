@@ -122,11 +122,11 @@ private:
         {
             if(solver_type == SolverType::VCycle)
             {
-                newVCycle(vh, fh, 2, 1, grid.grid_size); 
+                VCycle(vh, fh, 2, 1, grid.grid_size); 
             }
             else if(solver_type == SolverType::FullMultigridVCycle)
             {
-                vh = newFullMultigridVCycle(vh, fh, 3, grid.grid_size); //TODO
+                vh = FullMultigridVCycle(vh, fh, 3, grid.grid_size); //TODO
             }
             for(int i = 0; i < grid.grid_size; i++) 
             {
@@ -164,11 +164,11 @@ private:
         {
             if(solver_type == SolverType::VCycle)
             {
-                newVCycle(vh, fh, 2, 1, grid.grid_size); 
+                VCycle(vh, fh, 2, 1, grid.grid_size); 
             }
             else if(solver_type == SolverType::FullMultigridVCycle)
             {
-                vh = newFullMultigridVCycle(vh, fh, 1, grid.grid_size);
+                vh = FullMultigridVCycle(vh, fh, 1, grid.grid_size);
             }
             for (int i = 0; i < grid.grid_node_num; i++)
             {
@@ -176,7 +176,7 @@ private:
             } 
 
             // Calculate Relative Error
-            Eigen::MatrixXd errorVector = newGetResidual(Ah, vh, fh);
+            Eigen::MatrixXd errorVector = GetResidual(Ah, vh, fh);
             double max_norm = maxNorm(errorVector);
             double rel_error = max_norm / maxNorm(vh);
             std::cout << "Iteration " << iter << ":    Error = " << rel_error << std::endl;
@@ -185,23 +185,23 @@ private:
         }
     }
 
-    void newVCycle(Eigen::MatrixXd &vh, const Eigen::MatrixXd &fh, size_t nu1, size_t nu2, size_t grid_size_cur)
+    void VCycle(Eigen::MatrixXd &vh, const Eigen::MatrixXd &fh, size_t nu1, size_t nu2, size_t grid_size_cur)
     {   
         int layer = round(log(double(grid_size + 1)/(grid_size_cur + 1)) / log(2));
         Eigen::SparseMatrix<double> Ah = Ahs[layer];
 
         for(int i = 0; i < nu1; i++)
         {
-            newRelax(Ah, vh, fh);
-            //std::cout << "当前误差" << newGetResidual(Ah,vh,fh).norm() << std::endl;
+            Relax(Ah, vh, fh);
+            //std::cout << "当前误差" << GetResidual(Ah,vh,fh).norm() << std::endl;
         }
 
         if (grid_size_cur + 1 > coarest)
         {
             
-            Eigen::MatrixXd f2h = (*rst_opt)(newGetResidual(Ah,vh,fh), grid_size_cur);
+            Eigen::MatrixXd f2h = (*rst_opt)(GetResidual(Ah,vh,fh), grid_size_cur);
             Eigen::MatrixXd v2h = Eigen::MatrixXd::Zero(pow(grid_size_cur >> 1,dim), 1);
-            newVCycle(v2h, f2h, nu1, nu2, grid_size_cur >> 1);
+            VCycle(v2h, f2h, nu1, nu2, grid_size_cur >> 1);
             
             (*itp_opt)(v2h, grid_size_cur >> 1);
             //std::cout <<"插值后的大小" << (*itp_opt)(v2h, grid_size_cur >> 1).size() << std::endl;
@@ -215,8 +215,8 @@ private:
 
         for (int i = 0; i < nu2; i++)
         {
-            newRelax(Ah, vh, fh);
-            //std::cout << "当前误差" << newGetResidual(Ah,vh,fh).norm() << std::endl;
+            Relax(Ah, vh, fh);
+            //std::cout << "当前误差" << GetResidual(Ah,vh,fh).norm() << std::endl;
         }
     }
 
@@ -291,23 +291,23 @@ private:
             throw "dim error";
     }
 
-    void newRelax(const Eigen::MatrixXd &A, Eigen::MatrixXd &v,const Eigen::MatrixXd &f)
+    void Relax(const Eigen::MatrixXd &A, Eigen::MatrixXd &v,const Eigen::MatrixXd &f)
     {
         v += -omega/(2*dim)*A*v + omega/(2*dim)*f;
     }
     
-    Eigen::MatrixXd newGetResidual(const Eigen::MatrixXd &A,const Eigen::MatrixXd &v,const Eigen::MatrixXd &f)
+    Eigen::MatrixXd GetResidual(const Eigen::MatrixXd &A,const Eigen::MatrixXd &v,const Eigen::MatrixXd &f)
     {
         return f - A*v;
     }
 
-    Eigen::MatrixXd newFullMultigridVCycle(Eigen::MatrixXd vh, Eigen::MatrixXd &fh, size_t nu0, size_t grid_size_cur)
+    Eigen::MatrixXd FullMultigridVCycle(Eigen::MatrixXd vh, Eigen::MatrixXd &fh, size_t nu0, size_t grid_size_cur)
     {
         if(grid_size_cur + 1> coarest) 
         {
             auto f2h = (*rst_opt)(fh, grid_size_cur);
             auto v2h = (*rst_opt)(vh, grid_size_cur);
-            vh = (*itp_opt)(newFullMultigridVCycle(v2h, f2h, nu0, grid_size_cur >> 1),grid_size_cur >> 1);
+            vh = (*itp_opt)(FullMultigridVCycle(v2h, f2h, nu0, grid_size_cur >> 1),grid_size_cur >> 1);
         }
         else
         {
@@ -316,7 +316,7 @@ private:
 
         for(int i = 0; i<nu0; i++)
         {
-            newVCycle(vh, fh, 3, 3, grid_size_cur);
+            VCycle(vh, fh, 3, 3, grid_size_cur);
         }
         return vh;
     }
