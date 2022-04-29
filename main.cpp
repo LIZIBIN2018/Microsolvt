@@ -40,7 +40,6 @@ int run_test()
     // 根据json生成求解器
     CycleSolver<1> solver1(root);
     CycleSolver<2> solver2(root);
-    solver2.test();
 
      // 生成函数
     std::function<double(double)> f1;
@@ -63,6 +62,9 @@ int run_test()
         exit(1);
     }
 
+    output_path += root["restriction_operator"].asString() + "_";
+    output_path += root["interpolation_operator"].asString() + "_";
+
     // 输出
     //grid1.grid_output(output_path);
     grid2.grid_output(output_path);
@@ -74,14 +76,6 @@ int run_test()
 
 int main()
 {
-    InterpolationOperator<2> *itp = new LinearInterpolationOperator<2>();
-    Eigen::MatrixXd mat(3*3,1);
-    for(int i = 0;i < 3; i++)
-        for(int j = 0;j < 3; j++)
-            mat(i*3+j) = i*3+j;
-    std::cout << mat << std::endl;
-    std::cout << (*itp)(mat,3) << std::endl;
-
     run_test();
 }
 

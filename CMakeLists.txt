@@ -1,4 +1,8 @@
+if (NOT CMAKE_BUILD_TYPE)
+    set(CMAKE_BUILD_TYPE Release)
+endif()
 cmake_minimum_required(VERSION 3.10)
 project(Microsolvt)
 add_executable(Microsolvt main.cpp)
 target_link_libraries(Microsolvt jsoncpp)
+target_compile_options(Microsolvt PUBLIC -ffast-math -march=native -O3)
